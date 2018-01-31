@@ -1,11 +1,13 @@
 var distanceFromIndexToIndex = [],
 	xDistanceFromIndexToIndex = [],
 	yDistanceFromIndexToIndex = [],
-	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow;
+	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow,
+	maxScreenDistance;
 
 initializeXDistancesFromIndexToIndex();
 initializeYDistancesFromIndexToIndex();
 initializeDistancesFromIndexToIndex();
+maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 
 function initializeXDistancesFromIndexToIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
