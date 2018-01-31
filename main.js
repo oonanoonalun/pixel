@@ -10,17 +10,16 @@ function mainLoop() {
 		//pixelArray[index * 4 + 0] += Math.random() * 64 - 32;
         // add lines and things
         var brightness = 0;
-        if (frameCounter < 90) brightness += softLines(i, indexArrays[0]);
+        brightness += softLines(i, indexArrays[0]);
         brightness += softCircles(i, indexArrays[1]);
-        if (frameCounter < 90) brightness /= 2;
         //pixelArray[i * 4 + 0] = brightness; // DO NOT REMOVE!!! Makes things smooth and normal
-        if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness;
+        if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 30;
+        // fade
+        pixelArray[i * 4 + 0] -= 1;
         // equalize
         //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 1;
         //else pixelArray[i * 4 + 0] -= 1;
-        // fade
-        pixelArray[i * 4 + 0] -= 10;
-        modifyColors(i);
+        //modifyColors(i);
     }
     // draw pixelArray
     context.putImageData(imageData, 0, 0);

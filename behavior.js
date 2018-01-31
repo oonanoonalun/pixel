@@ -14,6 +14,7 @@ function initializeIndexArrays() {
 function softLines(index, indexArray) {
 	var brightness = 0;
 	for (var i = 0; i < indexArray.length; i++) {
+		// WRONG don't know why these aren't going to the left sometimes
 		brightness += 2048 / xDistanceFromIndexToIndex[index][indexArray[i]];
 	}
 	return brightness /= indexArrays[0].length;
