@@ -1,11 +1,20 @@
 var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
-
+var isIndexMovingUp = true; // hideous kludge
 function mainLoop() {
     // mix up the array of "target indices"
-    if (frameCounter % 90 === 0) initializeIndexArrays();
-    for (var i = 0; i < pixelsPerGrid; i++) { // WRONG this ordering is causing some biasing in the way siphoning works
+    if (frameCounter % 60 === 0) initializeIndexArrays();
+    // some KLUDGY movement
+    // circle
+    if (indexArrays[1][0] >= pixelsPerRow && isIndexMovingUp) {
+        indexArrays[1][0] -= pixelsPerRow;
+    }
+    else isIndexMovingUp = false;
+    if (!isIndexMovingUp &&indexArrays[1][0] < pixelsPerGrid - pixelsPerRow) indexArrays[1][0] += pixelsPerRow;
+    else isIndexMovingUp = true;
+    
+    for (var i = 0; i < pixelsPerGrid; i++) {
         // add noise
         pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
         // add lines and things
@@ -16,6 +25,8 @@ function mainLoop() {
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         // fade
         pixelArray[i * 4 + 0] -= 2;
+        // greyscale
+        //pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0]
         // equalize
         //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 1;
         //else pixelArray[i * 4 + 0] -= 1;

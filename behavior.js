@@ -3,10 +3,10 @@ initializeIndexArrays();
 
 function initializeIndexArrays() {
 	indexArrays = [[], []];
-	for (var i = 0; i < 6; i++) {
+	for (var i = 0; i < 3; i++) {
 		indexArrays[0].push(Math.round(Math.random() * pixelsPerGrid - 1));
 	}
-	for (var j = 0; j < 6; j++) {
+	for (var j = 0; j < 3; j++) {
 		indexArrays[1].push(Math.round(Math.random() * pixelsPerGrid - 1));
 	}
 }
