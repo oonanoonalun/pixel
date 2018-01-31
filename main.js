@@ -7,15 +7,15 @@ function mainLoop() {
     if (frameCounter % 90 === 0) initializeIndexArrays();
     for (var i = 0; i < pixelsPerGrid; i++) { // WRONG this ordering is causing some biasing in the way siphoning works
         // add noise
-		//pixelArray[index * 4 + 0] += Math.random() * 64 - 32;
+        pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
         // add lines and things
         var brightness = 0;
         brightness += softLines(i, indexArrays[0]);
         brightness += softCircles(i, indexArrays[1]);
         //pixelArray[i * 4 + 0] = brightness; // DO NOT REMOVE!!! Makes things smooth and normal
-        if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 30;
+        if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         // fade
-        pixelArray[i * 4 + 0] -= 1;
+        pixelArray[i * 4 + 0] -= 2;
         // equalize
         //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 1;
         //else pixelArray[i * 4 + 0] -= 1;
