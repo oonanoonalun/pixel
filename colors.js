@@ -5,3 +5,7 @@ function modifyColors(index) {
 		);
 	}
 }
+
+function blend(index) {
+	
+}

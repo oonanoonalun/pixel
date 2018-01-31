@@ -1,37 +1,53 @@
-var indexArrays = [];
-initializeIndexArrays();
 
-function initializeIndexArrays() {
-	indexArrays = [[], []];
-	for (var i = 0; i < 3; i++) {
-		indexArrays[0].push(Math.round(Math.random() * pixelsPerGrid - 1));
-	}
-	for (var j = 0; j < 3; j++) {
-		indexArrays[1].push(Math.round(Math.random() * pixelsPerGrid - 1));
+// non-object-based version
+function pace(entity, pixelsMovedPerFrame, isVertical) {
+	// WRONG should be able to start moving in the opposite direction (add an 'startsMovingPositively' parameter)
+	// WRONG should be more-accurately-descriptive term than "indexArrayIndex"
+	// WRONG if the speed is more than 1, the index will turn around prematurely.
+	//		It should split its speed between getting to the edge and going back the other direction some.
+	// WRONG, maybe. Could check distances instead of indices for hitting edges?
+	if (isVertical) { // moving vertically
+		if (
+			entity.index < pixelsPerGrid - pixelsPerRow * pixelsMovedPerFrame && // i.e. wouldn't hit the bottom edge next frame
+			(entity.isIndexMovingPositively || entity.isIndexMovingPositively === undefined)
+		) {
+			entity.index += pixelsPerRow * pixelsMovedPerFrame; // moves down
+		} else entity.isIndexMovingPositively = false;
+		if (entity.isIndexMovingPositively === false && entity.index >= pixelsPerRow * pixelsMovedPerFrame) {
+			entity.index -= pixelsPerRow * pixelsMovedPerFrame;
+		} else entity.isIndexMovingPositively = true;
+	} else { // moving horizontally
+		if (
+			entity.index % pixelsPerRow < pixelsPerRow - pixelsMovedPerFrame && // i.e. wouldn't hit the right edge next frame
+			(entity.isIndexMovingPositively || entity.isIndexMovingPositively === undefined)
+		) {
+			entity.index += pixelsMovedPerFrame; // moves down
+		} else entity.isIndexMovingPositively = false;
+		if (entity.isIndexMovingPositively === false && entity.index % pixelsPerRow >= pixelsMovedPerFrame) { // i.e. wouldn't hit the left edge next frame
+			entity.index -= pixelsMovedPerFrame;
+		} else entity.isIndexMovingPositively = true;
 	}
 }
 
-function softLines(index, indexArray) {
+function softLines(currentIndex, entitiesArray, areVertical) {
+	// WRONG is only vertical lines right now
+	// WRONG make lines able to freely rotate?
 	var brightness = 0;
-	for (var i = 0; i < indexArray.length; i++) {
-		// WRONG don't know why these aren't going to the left sometimes
-		brightness += 2048 / xDistanceFromIndexToIndex[index][indexArray[i]];
+	if (areVertical) { // vertical lines
+		for (var i = 0; i < entitiesArray.length; i++) {
+			if (brightness > 0) brightness += 2048 / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+			else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		}
+	} else { // horitzontal lines
+		
 	}
-	return brightness /= indexArrays[0].length;
+	return brightness / entitiesArray.length;
 }
 
-function softCircles(index, indexArray) {
+function softPoints(currentIndex, entitiesArray) {
 	var brightness = 0;
-    for (var i = 0; i < indexArray.length; i++) {
-		brightness += 2048 / distanceFromIndexToIndex[index][indexArray[i]];
+    for (var i = 0; i < entitiesArray.length; i++) {
+		brightness += entitiesArray[i].brightness / distanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 	}
-	return brightness /= indexArrays[0].length;
-}
-
-function circleIntersections(index, indexArray) {
-	// circles based on random indices
-	for (var i = 0; i < indexArray.length; i++) {
-		if (i % 2 === 0) pixelArray[index * 4 + 0] += distanceFromIndexToIndex[index][indexArray[i]] / (maxScreenDistance / 5);
-		else pixelArray[index * 4 + 0] -= distanceFromIndexToIndex[index][indexArray[i]] / (maxScreenDistance / 5);
-	}
+	return brightness / entitiesArray.length;
 }
