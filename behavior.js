@@ -41,7 +41,7 @@ function softLines(currentIndex, entitiesArray, areVertical) {
 	} else { // horitzontal lines
 		
 	}
-	return brightness / entitiesArray.length;
+	return brightness;
 }
 
 function softPoints(currentIndex, entitiesArray) {
@@ -49,5 +49,5 @@ function softPoints(currentIndex, entitiesArray) {
     for (var i = 0; i < entitiesArray.length; i++) {
 		brightness += entitiesArray[i].brightness / distanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 	}
-	return brightness / entitiesArray.length;
+	return brightness;
 }

@@ -23,21 +23,21 @@ function initializeEntities() {
 		entities.linesHoriz.push({
 			'index': Math.round(Math.random() * ((pixelsPerGrid - 1)) * pixelsPerRow),
 			'direction': Math.round(Math.random() * 7),
-			'brightness': 2048
+			'brightness': 768
 		});
 	}
 	for (var k = 0; k < 3; k++) {
 		entities.linesVert.push({
 			'index': Math.round(Math.random() * (pixelsPerGrid - 1)),
 			'direction': Math.round(Math.random() * 7),
-			'brightness': 2048
+			'brightness': 768
 		});
 	}
-	for (var j = 0; j < 3; j++) {
+	for (var j = 0; j < 1; j++) {
 		entities.points.push({
 			'index': Math.round(Math.random() * (pixelsPerGrid - 1)),
 			'direction': Math.round(Math.random() * 7),
-			'brightness': 2048
+			'brightness': 768
 		});
 	}
 }

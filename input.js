@@ -41,3 +41,29 @@ $('body').on('keydown', event => {
 $('body').on('keyup', event => {
    keysDown[event.which] = false;
 });
+//////////////////////
+// MOUSE
+/////////////////////////////////////////////
+// All from Chris for mouse cursor tracking
+
+var mouseX = 0,
+	mouseY = 0;
+
+$(document).on("mousemove", event => {
+	mouseX = event.pageX;
+	mouseY = event.pageY;
+});
+
+var relativeMousePosition = (element) => {
+	var elementOffset = $(element).offset();
+	return {x: mouseX - elementOffset.left, y: mouseY - elementOffset.top};
+};
+
+// end mouse stuff from Chris
+/////////////////////////////////////////////
+
+
+
+// end mouse
+//////////////////////////
+
