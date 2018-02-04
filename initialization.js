@@ -4,12 +4,12 @@ var canvas = $('canvas')[0],
 	pixelsPerColumn = canvas.height / canvas.width * pixelsPerRow,
 	pixelsPerGrid = pixelsPerRow * pixelsPerColumn,
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),
+	pixelArray  = imageData.data,
 	entities = {
 		'linesHoriz': [],
 		'linesVert': [],
 		'points': []
 	},
-    pixelArray  = imageData.data,
 	frameCounter = 1;
 
 initializeEntities();
@@ -19,24 +19,42 @@ function initializeEntities() {
 	entities.linesHoriz = [];
 	entities.linesVert = [];
 	entities.points = [];
-	for (var i = 0; i < 3; i++) {
+	for (var i = 0; i < 0; i++) {
 		entities.linesHoriz.push({
-			'index': Math.round(Math.random() * ((pixelsPerGrid - 1)) * pixelsPerRow),
-			'direction': Math.round(Math.random() * 7),
+			'x': Math.round(Math.random() * (canvas.width - 1)),
+			'y': Math.round(Math.random() * (canvas.height - 1)),
+			'dx': 0,
+			'vx': 0,
+			'dy': 0,
+			'vy': 0,
+			'maxAcceleration': 0.3,
+			'maxSpeed': 5,
 			'brightness': 768
 		});
 	}
-	for (var k = 0; k < 3; k++) {
+	for (var k = 0; k < 0; k++) {
 		entities.linesVert.push({
-			'index': Math.round(Math.random() * (pixelsPerGrid - 1)),
-			'direction': Math.round(Math.random() * 7),
+			'x': Math.round(Math.random() * (canvas.width - 1)),
+			'y': Math.round(Math.random() * (canvas.height - 1)),
+			'dx': 0,
+			'vx': 0,
+			'dy': 0,
+			'vy': 0,
+			'maxAcceleration': 0.3,
+			'maxSpeed': 5,
 			'brightness': 768
 		});
 	}
-	for (var j = 0; j < 1; j++) {
+	for (var j = 0; j < 5; j++) {
 		entities.points.push({
-			'index': Math.round(Math.random() * (pixelsPerGrid - 1)),
-			'direction': Math.round(Math.random() * 7),
+			'x': Math.round(Math.random() * (canvas.width - 1)),
+			'y': Math.round(Math.random() * (canvas.height - 1)),
+			'dx': 0,
+			'vx': 0,
+			'dy': 0,
+			'vy': 0,
+			'maxAcceleration': 0.3,
+			'maxSpeed': 5,
 			'brightness': 768
 		});
 	}

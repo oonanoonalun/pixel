@@ -47,7 +47,7 @@ $('body').on('keyup', event => {
 // All from Chris for mouse cursor tracking
 
 var mouseX = 0,
-	mouseY = 0;
+	 mouseY = 0;
 
 $(document).on("mousemove", event => {
 	mouseX = event.pageX;
@@ -56,7 +56,22 @@ $(document).on("mousemove", event => {
 
 var relativeMousePosition = (element) => {
 	var elementOffset = $(element).offset();
-	return {x: mouseX - elementOffset.left, y: mouseY - elementOffset.top};
+	// constraining the returned values to inside the canvas
+	// could remove these vars and just do Math.max(0, ...), but it might be slower(?)
+	var localX = mouseX - elementOffset.left,
+	    localY = mouseY - elementOffset.top;
+	if (localX < 0) localX = 0;
+	if (localY < 0) localY = 0;
+	if (localX > canvas.width - 1) localX = canvas.width - 1;
+	if (localY > canvas.height - 1) localY = canvas.height - 1;
+	// rounding // NOTE: for a while, the mouse coords were always integers (without rounding), but then they weren't (x always had an extra 0.800007 or something). I don't know what happened.
+	if (localX % 1 >= 0.5) localX += 1 - localX % 1;
+	if (localX % 1 < 0.5 && localX % 1 > -0.5) localX -= localX % 1;
+	if (localX % 1 <= -0.5) localX -= 1 + localX % 1;
+	if (localY % 1 >= 0.5) localY += 1 - localY % 1;
+	if (localY % 1 < 0.5 && localY % 1 > -0.5) localY -= localY % 1;
+	if (localY % 1 <= -0.5) localY -= 1 + localY % 1;
+	return {x: localX, y: localY, index: indexOfCoordinates[localX][localY]}; // assigning mouse position index. Only more efficient overall if its being referenced one or more times per frame.
 };
 
 // end mouse stuff from Chris

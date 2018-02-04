@@ -14,6 +14,8 @@ initializeIndexOfCoordinates();
 //initializeIndexNeighbors(); // WRONG: NOT DONE OR WORKING
 maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 
+
+// WRONG doesn't do anything now and is incomplete
 function initializeCoordinatesOfIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
 		/*coordinatesOfIndex.push(
@@ -26,6 +28,7 @@ function initializeCoordinatesOfIndex() {
 }
 
 function initializeIndexOfCoordinates() {
+	// send this [xCoordinate][yCoordinate]
 	for (var i = 0; i < canvas.width; i++) {
 		indexOfCoordinates.push([]);
 		for (var j = 0; j < canvas.height; j++) {
@@ -39,6 +42,7 @@ function initializeIndexOfCoordinates() {
 	}
 }
 
+// WRONG doesn't do anything and is incomplete
 function initializeIndexNeighbors() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
 		if (i + 1 >= 0 && i + 1 < pixelsPerGrid) { // to the right
