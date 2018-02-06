@@ -56,7 +56,7 @@ function wandering(entity, accelerationScale) {
 }
 
 
-function lineFromIndexToIndex(currentIndex, indexA, indexB) {
+function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness) {
 	var minX = coordinatesOfIndex[indexA].x,
 		minY = coordinatesOfIndex[indexA].y;
 	if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
@@ -98,17 +98,18 @@ function lineFromIndexToIndex(currentIndex, indexA, indexB) {
 	) {
 		return 2048;
 	}*/
-	// WRONG: Math.round function call
 	// this version lights up any points selected by the heuristic based on their distance from the line-points
-	/*if (coordinatesOfIndex[indexA].y === coordinatesOfIndex[indexB].y) {
-		console.log(Math.round(paraY * (maxX - minX) + minX), Math.round(paraX * (maxY - minY) + minY));
-		return;
-	}*/
-	return 768 / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[
-				Math.round(paraY * xDiff + minX)
-			][
-				Math.round(paraX * yDiff + minY)
-	]];
+	// in-line rounding to avoid a function call
+	var lineX = Math.round(paraY * xDiff + minX),
+		lineY = Math.round(paraX * yDiff + minY);
+	if (lineX % 1 >= 0.5) lineX += 1 - lineX % 1;
+	if (lineX % 1 < 0.5 && lineX % 1 > -0.5) lineX -= lineX % 1;
+	if (lineX % 1 <= -0.5) lineX -= 1 + lineX % 1;
+	if (lineY % 1 >= 0.5) lineY += 1 - lineY % 1;
+	if (lineY % 1 < 0.5 && lineY % 1 > -0.5) lineY -= lineY % 1;
+	if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
+	// WRONG: this could be dividing by 0, I'm pretty sure
+	return lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
 }
 
 function softLines(currentIndex, entitiesArray) {

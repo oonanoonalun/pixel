@@ -50,7 +50,7 @@ function mainLoop() {
         // entities affect brightness
         brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
-        brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index);
+        brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 1280);
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
