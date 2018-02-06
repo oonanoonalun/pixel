@@ -41,7 +41,7 @@ function initializeEntities() {
 		entities.lines.push(line);
 		entities.all.push(line);
 	}
-	for (var j = 0; j < 1; j++) {
+	for (var j = 0; j < 2; j++) {
 		point = {
 			'x': Math.round(Math.random() * (canvas.width - 1)),
 			'y': Math.round(Math.random() * (canvas.height - 1)),
@@ -51,10 +51,10 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 0.3,
 			'maxSpeed': 5,
-			'brightness': 768,
+			'brightness': 4096,
 			'type': 'point',
-			'target': null,
-			'shouldBeRemoved': false
+			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
+			'shouldBeRemoved': false // WRONG: Doesn't need to be initialized. Same for lines.
 		};
 		entities.points.push(point);
 		entities.all.push(point);

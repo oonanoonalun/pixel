@@ -103,7 +103,7 @@ function initializeXDistancesFromIndexToIndex() {
 		xDistanceFromIndexToIndex.push([]);
 		for (var j = 0; j < pixelsPerGrid; j++) {
 			xDistanceFromIndexToIndex[i].push(
-				j % pixelsPerRow - i % pixelsPerRow
+				j % pixelsPerRow * scaledPixelSize - i % pixelsPerRow * scaledPixelSize
 			);
 		}
 	}
@@ -125,7 +125,7 @@ function initializeYDistancesFromIndexToIndex() {
 		yDistanceFromIndexToIndex.push([]);
 		for (var j = 0; j < pixelsPerGrid; j++) {
 			yDistanceFromIndexToIndex[i].push(
-				(j - j % pixelsPerRow) / pixelsPerRow - (i - i % pixelsPerRow) / pixelsPerRow
+				(j - j % pixelsPerRow) / pixelsPerRow * scaledPixelSize - (i - i % pixelsPerRow) / pixelsPerRow * scaledPixelSize
 			);
 		}
 	}

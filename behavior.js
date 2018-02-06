@@ -33,34 +33,46 @@ function lineFromIndexToIndex(currentIndex, indexA, indexB) {
 		minY = coordinatesOfIndex[indexB].y;
 		maxY = coordinatesOfIndex[indexA].y;
 	}
-	if ( // if current pixel is inside the rectangle defined by indices A and B. Just hueristic to narrow down how much to calculate. Actually more efficient than not doing this step?
-		coordinatesOfIndex[currentIndex].x >= minX && coordinatesOfIndex[currentIndex].y >= minY &&
-		coordinatesOfIndex[currentIndex].x <= maxX && coordinatesOfIndex[currentIndex].y <= maxY
+	if ( // if current pixel is inside the rectangle defined by indices A and B. Just a hueristic to narrow down how much to calculate. Actually more efficient than not doing this step?
+		//coordinatesOfIndex[currentIndex].x >= minX && coordinatesOfIndex[currentIndex].y >= minY &&
+		//coordinatesOfIndex[currentIndex].x <= maxX && coordinatesOfIndex[currentIndex].y <= maxY
+		1 === 1
 	) {
+		//if (pixelArray[currentIndex * 4 + 1] < 48) pixelArray[currentIndex * 4 + 1] += 48; // WRONG: just testing
 		var paraX = (
 				(coordinatesOfIndex[currentIndex].x - minX) /
-				absXDistanceFromIndexToIndex[indexA][indexB]
+				(maxX - minX)
 			); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
 		var paraY = (
 				(coordinatesOfIndex[currentIndex].y - minY) /
-				absYDistanceFromIndexToIndex[indexA][indexB]
+				(maxY - minY)
 			);
-		if (currentIndex === (
-			indexOfCoordinates[
-				Math.round(
-					paraX * absXDistanceFromIndexToIndex[indexA][indexB] + minX
-				)
-			][
-				Math.round(
-					paraY * absYDistanceFromIndexToIndex[indexA][indexB] + minY
-				)
-			]
-		)) {
-			return 127;
-		}
+		if (paraX > 1) paraX = 1;
+		if (paraX < 0) paraX = 0;
+		if (paraY > 1) paraY = 1;
+		if (paraY < 0) paraY = 0;
+		// WRONG: Math.round function call
+		// this version lights up only the relevant points
+		/*if (
+				indexOfCoordinates[
+					Math.round(paraY * (maxX - minX) + minX)
+				][
+					Math.round(paraX * (maxY - minY) + minY)
+				] ===
+				currentIndex
+		) {
+			return 2048;
+		}*/
+		// WRONG: Math.round function call
+		// this version lights up any points selected by the heuristic based on their distance from the line-points
+		return 768 / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[
+					Math.round(paraY * (maxX - minX) + minX)
+				][
+					Math.round(paraX * (maxY - minY) + minY)
+		]];
 	}
 }
-	
+
 function chasing(entity, target, accelerationScale) {
 	var xDistance = xDistanceFromIndexToIndex[entity.index][target.index],
 		yDistance = yDistanceFromIndexToIndex[entity.index][target.index],
@@ -156,13 +168,13 @@ function updateEntities(entityArray) {
 }
 
 function softLines(currentIndex, entitiesArray) {
-	var brightness = 0;
+	var localBrightness = 0;
 	for (var i = 0; i < entitiesArray.length; i++) {
-		brightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-		brightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		localBrightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		localBrightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 		//else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 	}
-	return brightness;
+	return localBrightness;
 }
 
 /*function linesExperiments(currentIndex, indexA, indexB) {
@@ -204,9 +216,9 @@ function softLines(currentIndex, entitiesArray) {
 }*/
 
 function softPoints(currentIndex, entitiesArray) {
-	var brightness = 0;
+	var localBrightness = 0;
     for (var i = 0; i < entitiesArray.length; i++) {
-		brightness += entitiesArray[i].brightness /
+		localBrightness += entitiesArray[i].brightness /
 		distanceFromIndexToIndex[currentIndex][indexOfCoordinates[entitiesArray[i].x][entitiesArray[i].y]];
 		/*if (i === 0) {
 			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
@@ -219,7 +231,7 @@ function softPoints(currentIndex, entitiesArray) {
 		}*/
 	}
 	//if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-	return brightness;
+	return localBrightness;
 }
 
 function pace(entity, pixelsMovedPerFrame, isVertical) {

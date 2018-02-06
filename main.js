@@ -10,8 +10,8 @@ function mainLoop() {
     currentMousePosition = relativeMousePosition(canvas);
     
     // mouse position is controlling entities.points[1]
-    //entities.points[1].x = currentMousePosition.x;
-    //entities.points[1].y = currentMousePosition.y;
+    entities.points[1].x = currentMousePosition.x;
+    entities.points[1].y = currentMousePosition.y;
     
     // updating entity position, speed, acceleration, and nearest index
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -35,7 +35,7 @@ function mainLoop() {
             {index: 4499}
         ]
     );*/
-    //wandering(entities.points[0], 1);
+    wandering(entities.points[0], 1);
     //pace(entities.linesVert[0], 1, false);
     //pace(entities.points[0], 1, true);
 
@@ -48,16 +48,15 @@ function mainLoop() {
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
-        //brightness += softPoints(i, entities.points);
+        brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
-        brightness += lineFromIndexToIndex(i, 2440, currentMousePosition.index);
-        
+        brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index);
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         
         // brightness decay
         pixelArray[i * 4 + 0] -= 3;
-        //pixelArray[i * 4 + 1] -= 2;
+        //pixelArray[i * 4 + 1] -= 3;
         //pixelArray[i * 4 + 2] -= 2;
         
         // greyscale
