@@ -25,19 +25,19 @@ function mainLoop() {
         distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / maxScreenDistance * 30 // chases more aggressively when close to target
     );*/
     /*patrol(
-        entities.points[0],
+        entities.points[1],
         [
-            {index: 3900},
+            {index: 0},
             currentMousePosition,
             {index: 1900},
             {index: 171},
             {index: 981},
-            {index: 4499}
+            {index: 79}
         ]
     );*/
-    wandering(entities.points[0], 1);
+    //wandering(entities.points[0], 1);
     //pace(entities.linesVert[0], 1, false);
-    //pace(entities.points[0], 1, true);
+    //pace(entities.points[1], 1, false);
 
     for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
@@ -51,6 +51,7 @@ function mainLoop() {
         brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
         brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index);
+        
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         

@@ -20,59 +20,6 @@ function patrol(entity, arrayOfTargets) {
 	chasing(entity, entity.target, 200);
 }
 
-function lineFromIndexToIndex(currentIndex, indexA, indexB) {
-	var minX = coordinatesOfIndex[indexA].x,
-		minY = coordinatesOfIndex[indexA].y,
-		maxX = coordinatesOfIndex[indexB].x,
-		maxY = coordinatesOfIndex[indexB].y;
-	if (minX > coordinatesOfIndex[indexB].x) {
-		minX = coordinatesOfIndex[indexB].x;
-		maxX = coordinatesOfIndex[indexA].x;
-	}
-	if (minY > coordinatesOfIndex[indexB].y) {
-		minY = coordinatesOfIndex[indexB].y;
-		maxY = coordinatesOfIndex[indexA].y;
-	}
-	if ( // if current pixel is inside the rectangle defined by indices A and B. Just a hueristic to narrow down how much to calculate. Actually more efficient than not doing this step?
-		//coordinatesOfIndex[currentIndex].x >= minX && coordinatesOfIndex[currentIndex].y >= minY &&
-		//coordinatesOfIndex[currentIndex].x <= maxX && coordinatesOfIndex[currentIndex].y <= maxY
-		1 === 1
-	) {
-		//if (pixelArray[currentIndex * 4 + 1] < 48) pixelArray[currentIndex * 4 + 1] += 48; // WRONG: just testing
-		var paraX = (
-				(coordinatesOfIndex[currentIndex].x - minX) /
-				(maxX - minX)
-			); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
-		var paraY = (
-				(coordinatesOfIndex[currentIndex].y - minY) /
-				(maxY - minY)
-			);
-		if (paraX > 1) paraX = 1;
-		if (paraX < 0) paraX = 0;
-		if (paraY > 1) paraY = 1;
-		if (paraY < 0) paraY = 0;
-		// WRONG: Math.round function call
-		// this version lights up only the relevant points
-		/*if (
-				indexOfCoordinates[
-					Math.round(paraY * (maxX - minX) + minX)
-				][
-					Math.round(paraX * (maxY - minY) + minY)
-				] ===
-				currentIndex
-		) {
-			return 2048;
-		}*/
-		// WRONG: Math.round function call
-		// this version lights up any points selected by the heuristic based on their distance from the line-points
-		return 768 / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[
-					Math.round(paraY * (maxX - minX) + minX)
-				][
-					Math.round(paraX * (maxY - minY) + minY)
-		]];
-	}
-}
-
 function chasing(entity, target, accelerationScale) {
 	var xDistance = xDistanceFromIndexToIndex[entity.index][target.index],
 		yDistance = yDistanceFromIndexToIndex[entity.index][target.index],
@@ -106,6 +53,91 @@ function wandering(entity, accelerationScale) {
 	if (magnitude === 0) magnitude = 0.001; // keeps us from dividing by zero
 	entity.dx += xDistance / magnitude * accelerationScale;
 	entity.dy += yDistance / magnitude * accelerationScale;
+}
+
+
+function lineFromIndexToIndex(currentIndex, indexA, indexB) {
+	var minX = coordinatesOfIndex[indexA].x,
+		minY = coordinatesOfIndex[indexA].y;
+	if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
+	if (minY > coordinatesOfIndex[indexB].y) minY = coordinatesOfIndex[indexB].y;
+	var xDiff = absXDistanceFromIndexToIndex[indexA][indexB],
+		yDiff = absYDistanceFromIndexToIndex[indexA][indexB];
+	// avoiding dividing by 0
+	if (xDiff === 0) xDiff = 0.01;
+	if (yDiff === 0) yDiff = 0.01;
+	var paraX = (
+			(coordinatesOfIndex[currentIndex].x - minX) /
+			xDiff
+		); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
+	var paraY = (
+			(coordinatesOfIndex[currentIndex].y - minY) /
+			yDiff
+		);
+	if (paraX > 1) paraX = 1;
+	if (paraX < 0) paraX = 0;
+	if (paraY > 1) paraY = 1;
+	if (paraY < 0) paraY = 0;
+	// WRONG, probably. Seems like there should be a more elegant way to derive the correct parametric values. (Maybe for the above limiting as well.)
+	if (
+		(minX === coordinatesOfIndex[indexB].x && minY === coordinatesOfIndex[indexA].y) ||
+		(minX === coordinatesOfIndex[indexA].x && minY === coordinatesOfIndex[indexB].y)
+	) {
+		paraX = 1 - paraX;
+		paraY = 1 - paraY;
+	}
+	// WRONG: Math.round function call
+	// this version lights up only the relevant points
+	/*if (
+			indexOfCoordinates[
+				Math.round(paraY * (maxX - minX) + minX)
+			][
+				Math.round(paraX * (maxY - minY) + minY)
+			] ===
+			currentIndex
+	) {
+		return 2048;
+	}*/
+	// WRONG: Math.round function call
+	// this version lights up any points selected by the heuristic based on their distance from the line-points
+	/*if (coordinatesOfIndex[indexA].y === coordinatesOfIndex[indexB].y) {
+		console.log(Math.round(paraY * (maxX - minX) + minX), Math.round(paraX * (maxY - minY) + minY));
+		return;
+	}*/
+	return 768 / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[
+				Math.round(paraY * xDiff + minX)
+			][
+				Math.round(paraX * yDiff + minY)
+	]];
+}
+
+function softLines(currentIndex, entitiesArray) {
+	var localBrightness = 0;
+	for (var i = 0; i < entitiesArray.length; i++) {
+		localBrightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		localBrightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		//else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+	}
+	return localBrightness;
+}
+
+function softPoints(currentIndex, entitiesArray) {
+	var localBrightness = 0;
+    for (var i = 0; i < entitiesArray.length; i++) {
+		localBrightness += entitiesArray[i].brightness /
+		distanceFromIndexToIndex[currentIndex][indexOfCoordinates[entitiesArray[i].x][entitiesArray[i].y]];
+		/*if (i === 0) {
+			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
+		}
+		if (i === 1) {
+			if (pixelArray[currentIndex * 4 + 1] < brightness) pixelArray[currentIndex * 4 + 1] += brightness / 20;
+		}
+		if (i > 1) {
+			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
+		}*/
+	}
+	//if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
+	return localBrightness;
 }
 
 function updateEntities(entityArray) {
@@ -167,16 +199,6 @@ function updateEntities(entityArray) {
 	}
 }
 
-function softLines(currentIndex, entitiesArray) {
-	var localBrightness = 0;
-	for (var i = 0; i < entitiesArray.length; i++) {
-		localBrightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-		localBrightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-		//else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-	}
-	return localBrightness;
-}
-
 /*function linesExperiments(currentIndex, indexA, indexB) {
 	var iC = {
 		'x': coordinatesOfIndex[currentIndex].x,
@@ -214,51 +236,3 @@ function softLines(currentIndex, entitiesArray) {
 		);
 	return brightness;
 }*/
-
-function softPoints(currentIndex, entitiesArray) {
-	var localBrightness = 0;
-    for (var i = 0; i < entitiesArray.length; i++) {
-		localBrightness += entitiesArray[i].brightness /
-		distanceFromIndexToIndex[currentIndex][indexOfCoordinates[entitiesArray[i].x][entitiesArray[i].y]];
-		/*if (i === 0) {
-			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-		}
-		if (i === 1) {
-			if (pixelArray[currentIndex * 4 + 1] < brightness) pixelArray[currentIndex * 4 + 1] += brightness / 20;
-		}
-		if (i > 1) {
-			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-		}*/
-	}
-	//if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-	return localBrightness;
-}
-
-function pace(entity, pixelsMovedPerFrame, isVertical) {
-	// WRONG should be able to start moving in the opposite direction (add an 'startsMovingPositively' parameter)
-	// WRONG should be more-accurately-descriptive term than "indexArrayIndex"
-	// WRONG if the speed is more than 1, the index will turn around prematurely.
-	//		It should split its speed between getting to the edge and going back the other direction some.
-	// WRONG, maybe. Could check distances instead of indices for hitting edges?
-	if (isVertical) { // moving vertically
-		if (
-			entity.index < pixelsPerGrid - pixelsPerRow * pixelsMovedPerFrame && // i.e. wouldn't hit the bottom edge next frame
-			(entity.isIndexMovingPositively || entity.isIndexMovingPositively === undefined)
-		) {
-			entity.index += pixelsPerRow * pixelsMovedPerFrame; // moves down
-		} else entity.isIndexMovingPositively = false;
-		if (entity.isIndexMovingPositively === false && entity.index >= pixelsPerRow * pixelsMovedPerFrame) {
-			entity.index -= pixelsPerRow * pixelsMovedPerFrame;
-		} else entity.isIndexMovingPositively = true;
-	} else { // moving horizontally
-		if (
-			entity.index % pixelsPerRow < pixelsPerRow - pixelsMovedPerFrame && // i.e. wouldn't hit the right edge next frame
-			(entity.isIndexMovingPositively || entity.isIndexMovingPositively === undefined)
-		) {
-			entity.index += pixelsMovedPerFrame; // moves down
-		} else entity.isIndexMovingPositively = false;
-		if (entity.isIndexMovingPositively === false && entity.index % pixelsPerRow >= pixelsMovedPerFrame) { // i.e. wouldn't hit the left edge next frame
-			entity.index -= pixelsMovedPerFrame;
-		} else entity.isIndexMovingPositively = true;
-	}
-}
