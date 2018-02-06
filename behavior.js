@@ -1,9 +1,70 @@
-function chasing(entity, targetX, targetY, accelerationScale) {
-	var entityIndex = indexOfCoordinates[entity.x][entity.y],
-		targetIndex = indexOfCoordinates[targetX][targetY],
-		xDistance = xDistanceFromIndexToIndex[entityIndex][targetIndex],
-		yDistance = yDistanceFromIndexToIndex[entityIndex][targetIndex],
-		magnitude = distanceFromIndexToIndex[entityIndex][targetIndex];
+var currentMousePosition = relativeMousePosition(canvas);
+
+function patrol(entity, arrayOfTargets) {
+	if (entity.patrolArrayTargetIndex === undefined) entity.patrolArrayTargetIndex = 0;
+	entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
+	if (
+		distanceFromIndexToIndex[entity.index][arrayOfTargets[entity.patrolArrayTargetIndex].index] < 3 &&
+		arrayOfTargets[entity.patrolArrayTargetIndex + 1]
+	) {
+		entity.patrolArrayTargetIndex++;
+		entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
+	}
+	if (
+		distanceFromIndexToIndex[entity.index][arrayOfTargets[entity.patrolArrayTargetIndex].index] < 3 &&
+		!arrayOfTargets[entity.patrolArrayTargetIndex + 1]
+	) {
+		entity.patrolArrayTargetIndex = 0;
+		entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
+	}
+	chasing(entity, entity.target, 200);
+}
+
+function lineFromIndexToIndex(currentIndex, indexA, indexB) {
+	var minX = coordinatesOfIndex[indexA].x,
+		minY = coordinatesOfIndex[indexA].y,
+		maxX = coordinatesOfIndex[indexB].x,
+		maxY = coordinatesOfIndex[indexB].y;
+	if (minX > coordinatesOfIndex[indexB].x) {
+		minX = coordinatesOfIndex[indexB].x;
+		maxX = coordinatesOfIndex[indexA].x;
+	}
+	if (minY > coordinatesOfIndex[indexB].y) {
+		minY = coordinatesOfIndex[indexB].y;
+		maxY = coordinatesOfIndex[indexA].y;
+	}
+	if ( // if current pixel is inside the rectangle defined by indices A and B. Just hueristic to narrow down how much to calculate. Actually more efficient than not doing this step?
+		coordinatesOfIndex[currentIndex].x >= minX && coordinatesOfIndex[currentIndex].y >= minY &&
+		coordinatesOfIndex[currentIndex].x <= maxX && coordinatesOfIndex[currentIndex].y <= maxY
+	) {
+		var paraX = (
+				(coordinatesOfIndex[currentIndex].x - minX) /
+				absXDistanceFromIndexToIndex[indexA][indexB]
+			); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
+		var paraY = (
+				(coordinatesOfIndex[currentIndex].y - minY) /
+				absYDistanceFromIndexToIndex[indexA][indexB]
+			);
+		if (currentIndex === (
+			indexOfCoordinates[
+				Math.round(
+					paraX * absXDistanceFromIndexToIndex[indexA][indexB] + minX
+				)
+			][
+				Math.round(
+					paraY * absYDistanceFromIndexToIndex[indexA][indexB] + minY
+				)
+			]
+		)) {
+			return 127;
+		}
+	}
+}
+	
+function chasing(entity, target, accelerationScale) {
+	var xDistance = xDistanceFromIndexToIndex[entity.index][target.index],
+		yDistance = yDistanceFromIndexToIndex[entity.index][target.index],
+		magnitude = distanceFromIndexToIndex[entity.index][target.index];
 	if (magnitude === 0) magnitude = 0.001; // keeps us from dividing by zero
 	entity.dx += xDistance / magnitude * accelerationScale;
 	entity.dy += yDistance / magnitude * accelerationScale;
@@ -64,6 +125,9 @@ function updateEntities(entityArray) {
 			entity.vx *= entity.maxSpeed / (absVx + absVy);
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
+		// friction applied to speed
+		//entity.vx *= 0.5;
+		//entity.vy *= 0.5;
 		// speed applied to position
 		entity.x += entity.vx;
 		entity.y += entity.vy;
@@ -91,27 +155,60 @@ function updateEntities(entityArray) {
 	}
 }
 
-function softLines(currentIndex, entitiesArray, areVertical) {
-	// WRONG is only vertical lines right now
-	// WRONG make lines able to freely rotate?
+function softLines(currentIndex, entitiesArray) {
 	var brightness = 0;
-	if (areVertical) { // vertical lines
-		for (var i = 0; i < entitiesArray.length; i++) {
-			if (brightness > 0) brightness += entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-			else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-		}
-	} else { // horizontal lines
-		
+	for (var i = 0; i < entitiesArray.length; i++) {
+		brightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		brightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		//else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 	}
 	return brightness;
 }
+
+/*function linesExperiments(currentIndex, indexA, indexB) {
+	var iC = {
+		'x': coordinatesOfIndex[currentIndex].x,
+		'y': coordinatesOfIndex[currentIndex].y
+		},
+		iA = {
+			'x': coordinatesOfIndex[indexA].x,
+			'y': coordinatesOfIndex[indexA].y
+		},
+		iB = {
+			// WRONG: if this is mouse coords, then we're turning coords into an index into coords
+			'x': coordinatesOfIndex[indexB].x,
+			'y': coordinatesOfIndex[indexB].y
+		};
+	var dAB = distanceFromIndexToIndex[indexA][indexB],
+		dAC = distanceFromIndexToIndex[currentIndex][indexA],
+		dBC = distanceFromIndexToIndex[currentIndex][indexB],
+		xDAB = xDistanceFromIndexToIndex[indexA][indexB],
+		xDBA = xDistanceFromIndexToIndex[indexB][indexA],
+		xDAC = xDistanceFromIndexToIndex[indexA][currentIndex],
+		xDCA = xDistanceFromIndexToIndex[currentIndex][indexA],
+		xDBC = xDistanceFromIndexToIndex[indexB][currentIndex],
+		xDCB = xDistanceFromIndexToIndex[currentIndex][indexB],
+		yDAB = yDistanceFromIndexToIndex[indexA][indexB],
+		yDBA = yDistanceFromIndexToIndex[indexB][indexA],
+		yDAC = yDistanceFromIndexToIndex[indexA][currentIndex],
+		yDCA = yDistanceFromIndexToIndex[currentIndex][indexA],
+		yDBC = yDistanceFromIndexToIndex[indexB][currentIndex],
+		yDCB = yDistanceFromIndexToIndex[currentIndex][indexB];
+
+	// bad to use this name that's a global var?
+	var brightness = 0;
+		brightness += (
+			yDBC / xDBC
+		);
+	return brightness;
+}*/
 
 function softPoints(currentIndex, entitiesArray) {
 	var brightness = 0;
     for (var i = 0; i < entitiesArray.length; i++) {
 		brightness += entitiesArray[i].brightness /
 		distanceFromIndexToIndex[currentIndex][indexOfCoordinates[entitiesArray[i].x][entitiesArray[i].y]];
-		if (i === 0) {
+		/*if (i === 0) {
 			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
 		}
 		if (i === 1) {
@@ -119,10 +216,10 @@ function softPoints(currentIndex, entitiesArray) {
 		}
 		if (i > 1) {
 			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-		}
+		}*/
 	}
 	//if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-	//return brightness;
+	return brightness;
 }
 
 function pace(entity, pixelsMovedPerFrame, isVertical) {

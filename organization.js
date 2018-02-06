@@ -1,29 +1,53 @@
 var distanceFromIndexToIndex = [],
 	xDistanceFromIndexToIndex = [],
+	absXDistanceFromIndexToIndex = [],
 	yDistanceFromIndexToIndex = [],
-	coordinatesOfIndex = [], // WRONG: NOT DONE OR USED
+	absYDistanceFromIndexToIndex = [],
+	coordinatesOfIndex = [],
 	indexOfCoordinates = [],
+	//allIndexToIndexDistances = [], // WRONG: Too slow to process. index-to-index distances
 	indexNeighbors = [], // WRONG: NOT DONE OR USED
 	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow,
 	maxScreenDistance;
 
 initializeXDistancesFromIndexToIndex();
+initializeAbsXDistancesFromIndexToIndex();
 initializeYDistancesFromIndexToIndex();
+initializeAbsYDistancesFromIndexToIndex();
 initializeDistancesFromIndexToIndex();
+//initializeAllIndexToIndexDistances(); // WRONG: too slow to process
 initializeIndexOfCoordinates();
+initializeCoordinatesOfIndex();
 //initializeIndexNeighbors(); // WRONG: NOT DONE OR WORKING
 maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 
+// WRONG: too slow to process
+function initializeAllIndexToIndexDistances() {
+	for (var i = 0; i < pixelsPerGrid; i++) {
+		allIndexToIndexDistances.push([]);
+		console.log(i);
+		for (var j = 0; j < pixelsPerGrid; j++) {
+			allIndexToIndexDistances[i].push(
+				{
+					'x': xDistanceFromIndexToIndex[i][j],
+					'absx': xDistanceFromIndexToIndex[i][j], // absolute value of x distance
+					'y': yDistanceFromIndexToIndex[i][j],
+					'absy': yDistanceFromIndexToIndex[i][j],
+					'd': distanceFromIndexToIndex[i][j]
+				}
+			);
+			if (allIndexToIndexDistances[i][j].absx < 0) allIndexToIndexDistances[i][j].absx = -allIndexToIndexDistances[i][j].absx;
+			if (allIndexToIndexDistances[i][j].absy < 0) allIndexToIndexDistances[i][j].absy = -allIndexToIndexDistances[i][j].absy;
+		}
+	}
+}
 
-// WRONG doesn't do anything now and is incomplete
 function initializeCoordinatesOfIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
-		/*coordinatesOfIndex.push(
-			[
-				i % pixelsPerRow / pixelsPerRow * canvas.width,
-				i / pixelsPerColumn
-			]
-		);*/
+		coordinatesOfIndex.push({
+			'x': i % pixelsPerRow * scaledPixelSize + 0.5 * scaledPixelSize,
+			'y': Math.floor(i / pixelsPerRow) * scaledPixelSize + 0.5 * scaledPixelSize
+		});
 	}
 }
 
@@ -85,6 +109,17 @@ function initializeXDistancesFromIndexToIndex() {
 	}
 }
 
+function initializeAbsXDistancesFromIndexToIndex() {
+	for (var i = 0; i < pixelsPerGrid; i++) {
+		absXDistanceFromIndexToIndex.push([]);
+		for (var j = 0; j < pixelsPerGrid; j++) {
+			var absXDistance = xDistanceFromIndexToIndex[i][j];
+			if (absXDistance < 0) absXDistance = -absXDistance;
+			absXDistanceFromIndexToIndex[i].push(absXDistance);
+		}
+	}
+}
+
 function initializeYDistancesFromIndexToIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
 		yDistanceFromIndexToIndex.push([]);
@@ -92,6 +127,17 @@ function initializeYDistancesFromIndexToIndex() {
 			yDistanceFromIndexToIndex[i].push(
 				(j - j % pixelsPerRow) / pixelsPerRow - (i - i % pixelsPerRow) / pixelsPerRow
 			);
+		}
+	}
+}
+
+function initializeAbsYDistancesFromIndexToIndex() {
+	for (var i = 0; i < pixelsPerGrid; i++) {
+		absYDistanceFromIndexToIndex.push([]);
+		for (var j = 0; j < pixelsPerGrid; j++) {
+			var absYDistance = yDistanceFromIndexToIndex[i][j];
+			if (absYDistance < 0) absYDistance = -absYDistance;
+			absYDistanceFromIndexToIndex[i].push(absYDistance);
 		}
 	}
 }

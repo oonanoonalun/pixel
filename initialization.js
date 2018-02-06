@@ -3,12 +3,13 @@ var canvas = $('canvas')[0],
 	pixelsPerRow = 80,
 	pixelsPerColumn = canvas.height / canvas.width * pixelsPerRow,
 	pixelsPerGrid = pixelsPerRow * pixelsPerColumn,
+	scaledPixelSize = canvas.width / pixelsPerRow,
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),
 	pixelArray  = imageData.data,
 	entities = {
-		'linesHoriz': [],
-		'linesVert': [],
-		'points': []
+		'lines': [],
+		'points': [],
+		'all': []
 	},
 	frameCounter = 1;
 
@@ -16,11 +17,10 @@ initializeEntities();
 initializeRGBAChannels();
 
 function initializeEntities() {
-	entities.linesHoriz = [];
-	entities.linesVert = [];
+	entities.lines = [];
 	entities.points = [];
-	for (var i = 0; i < 0; i++) {
-		entities.linesHoriz.push({
+	for (var i = 0; i < 1; i++) {
+		var line = {
 			'x': Math.round(Math.random() * (canvas.width - 1)),
 			'y': Math.round(Math.random() * (canvas.height - 1)),
 			'dx': 0,
@@ -29,11 +29,20 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 0.3,
 			'maxSpeed': 5,
-			'brightness': 768
-		});
+			'brightnessFront': 768,
+			'brightnessBack': -768,
+			'angle': 0,
+			'length': 200,
+			'spread': 200,
+			'type': 'line',
+			'shouldBeRemoved': false
+		};
+		// WRONG: I don't want to have to filter two arrays for removing one item
+		entities.lines.push(line);
+		entities.all.push(line);
 	}
-	for (var k = 0; k < 0; k++) {
-		entities.linesVert.push({
+	for (var j = 0; j < 1; j++) {
+		point = {
 			'x': Math.round(Math.random() * (canvas.width - 1)),
 			'y': Math.round(Math.random() * (canvas.height - 1)),
 			'dx': 0,
@@ -42,21 +51,13 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 0.3,
 			'maxSpeed': 5,
-			'brightness': 768
-		});
-	}
-	for (var j = 0; j < 5; j++) {
-		entities.points.push({
-			'x': Math.round(Math.random() * (canvas.width - 1)),
-			'y': Math.round(Math.random() * (canvas.height - 1)),
-			'dx': 0,
-			'vx': 0,
-			'dy': 0,
-			'vy': 0,
-			'maxAcceleration': 0.3,
-			'maxSpeed': 5,
-			'brightness': 768
-		});
+			'brightness': 768,
+			'type': 'point',
+			'target': null,
+			'shouldBeRemoved': false
+		};
+		entities.points.push(point);
+		entities.all.push(point);
 	}
 }
 
