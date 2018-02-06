@@ -10,8 +10,8 @@ function mainLoop() {
     currentMousePosition = relativeMousePosition(canvas);
     
     // mouse position is controlling entities.points[1]
-    entities.points[1].x = currentMousePosition.x;
-    entities.points[1].y = currentMousePosition.y;
+    //entities.points[1].x = currentMousePosition.x;
+    //entities.points[1].y = currentMousePosition.y;
     
     // updating entity position, speed, acceleration, and nearest index
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -24,6 +24,10 @@ function mainLoop() {
         entities.points[0], currentMousePosition,
         distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / maxScreenDistance * 30 // chases more aggressively when close to target
     );*/
+    chasing(entities.points[0], entities.points[1], 1);
+    wandering(entities.points[0], 1);
+    fleeing(entities.points[1], entities.points[0], 1);
+    wandering(entities.points[1], 1);
     /*patrol(
         entities.points[1],
         [
@@ -50,7 +54,7 @@ function mainLoop() {
         // entities affect brightness
         brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
-        brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 1280);
+        brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 768);
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;

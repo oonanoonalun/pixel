@@ -20,6 +20,7 @@ function patrol(entity, arrayOfTargets) {
 	chasing(entity, entity.target, 200);
 }
 
+// WRONG: chasing() and fleeing() are the same except for a += or -= at the ends, respectively. Could probably collapse into one function.
 function chasing(entity, target, accelerationScale) {
 	var xDistance = xDistanceFromIndexToIndex[entity.index][target.index],
 		yDistance = yDistanceFromIndexToIndex[entity.index][target.index],
@@ -29,12 +30,11 @@ function chasing(entity, target, accelerationScale) {
 	entity.dy += yDistance / magnitude * accelerationScale;
 }
 
-function fleeing(entity, targetX, targetY, accelerationScale) {
-	var entityIndex = indexOfCoordinates[entity.x][entity.y],
-		targetIndex = indexOfCoordinates[targetX][targetY],
-		xDistance = xDistanceFromIndexToIndex[entityIndex][targetIndex],
-		yDistance = yDistanceFromIndexToIndex[entityIndex][targetIndex],
-		magnitude = distanceFromIndexToIndex[entityIndex][targetIndex];
+// WRONG: fleeing entities should move away from walls, even if that's slightly toward their targets, so that they don't get cornered.
+function fleeing(entity, target, accelerationScale) {
+	var xDistance = xDistanceFromIndexToIndex[entity.index][target.index],
+		yDistance = yDistanceFromIndexToIndex[entity.index][target.index],
+		magnitude = distanceFromIndexToIndex[entity.index][target.index];
 	if (magnitude === 0) magnitude = 0.001; // keeps us from dividing by zero
 	entity.dx -= xDistance / magnitude * accelerationScale;
 	entity.dy -= yDistance / magnitude * accelerationScale;
