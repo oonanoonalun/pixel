@@ -86,46 +86,105 @@ function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness) {
 		paraX = 1 - paraX;
 		paraY = 1 - paraY;
 	}
-	// WRONG: Math.round function call
-	// this version lights up only the relevant points
-	/*if (
-			indexOfCoordinates[
-				Math.round(paraY * (maxX - minX) + minX)
-			][
-				Math.round(paraX * (maxY - minY) + minY)
-			] ===
-			currentIndex
-	) {
-		return 2048;
-	}*/
-	// this version lights up any points selected by the heuristic based on their distance from the line-points
+
 	// in-line rounding to avoid a function call
-	var lineX = Math.round(paraY * xDiff + minX),
-		lineY = Math.round(paraX * yDiff + minY);
+	var lineX = paraY * xDiff + minX,
+		lineY = paraX * yDiff + minY;
 	if (lineX % 1 >= 0.5) lineX += 1 - lineX % 1;
 	if (lineX % 1 < 0.5 && lineX % 1 > -0.5) lineX -= lineX % 1;
 	if (lineX % 1 <= -0.5) lineX -= 1 + lineX % 1;
 	if (lineY % 1 >= 0.5) lineY += 1 - lineY % 1;
 	if (lineY % 1 < 0.5 && lineY % 1 > -0.5) lineY -= lineY % 1;
 	if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
+	// this version lights up only the relevant points
+	/*if (indexOfCoordinates[lineX][lineY] === currentIndex) {
+			brightness += 127;
+	}*/
+	// this version creates a soft, distance-based effect
 	// WRONG: this could be dividing by 0, I'm pretty sure
 	return lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
 }
 
+function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndices, lineBrightness) {
+	// WRONG temporarily using top row (indices 0 through 80) instead of arrayOfIndices
+	var brightness = 0;
+	for (var i = 0; i < 80; i++) {
+		var indexA = originIndex,
+			indexB = i;
+		var minX = coordinatesOfIndex[indexA].x,
+			minY = coordinatesOfIndex[indexA].y;
+		if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
+		if (minY > coordinatesOfIndex[indexB].y) minY = coordinatesOfIndex[indexB].y;
+		var xDiff = absXDistanceFromIndexToIndex[indexA][indexB],
+			yDiff = absYDistanceFromIndexToIndex[indexA][indexB];
+		// avoiding dividing by 0
+		if (xDiff === 0) xDiff = 0.01;
+		if (yDiff === 0) yDiff = 0.01;
+		var paraX = (
+				(coordinatesOfIndex[currentIndex].x - minX) /
+				xDiff
+			); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
+		var paraY = (
+				(coordinatesOfIndex[currentIndex].y - minY) /
+				yDiff
+			);
+		if (paraX > 1) paraX = 1;
+		if (paraX < 0) paraX = 0;
+		if (paraY > 1) paraY = 1;
+		if (paraY < 0) paraY = 0;
+		// WRONG, probably. Seems like there should be a more elegant way to derive the correct parametric values. (Maybe for the above limiting as well.)
+		if (
+			(minX === coordinatesOfIndex[indexB].x && minY === coordinatesOfIndex[indexA].y) ||
+			(minX === coordinatesOfIndex[indexA].x && minY === coordinatesOfIndex[indexB].y)
+		) {
+			paraX = 1 - paraX;
+			paraY = 1 - paraY;
+		}
+		// in-line rounding to avoid a function call
+		var lineX = paraY * xDiff + minX,
+			lineY = paraX * yDiff + minY;
+		if (lineX % 1 >= 0.5) lineX += 1 - lineX % 1;
+		if (lineX % 1 < 0.5 && lineX % 1 > -0.5) lineX -= lineX % 1;
+		if (lineX % 1 <= -0.5) lineX -= 1 + lineX % 1;
+		if (lineY % 1 >= 0.5) lineY += 1 - lineY % 1;
+		if (lineY % 1 < 0.5 && lineY % 1 > -0.5) lineY -= lineY % 1;
+		if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
+		// this version lights up only the relevant points
+		if (indexOfCoordinates[lineX][lineY] === currentIndex) {
+			brightness += 127;
+		}
+	}
+	// WRONG: this could be dividing by 0, I'm pretty sure
+	// this version creates a soft, distance-based effect.
+	//return lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
+	return brightness;
+}
+
 function softLines(currentIndex, entitiesArray) {
-	var localBrightness = 0;
+	var brightness = 0;
 	for (var i = 0; i < entitiesArray.length; i++) {
-		localBrightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
-		localBrightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		brightness += entitiesArray[i].brightnessFront / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
+		brightness += entitiesArray[i].brightnessBack / -xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 		//else brightness -= entitiesArray[i].brightness / xDistanceFromIndexToIndex[currentIndex][entitiesArray[i].index];
 	}
-	return localBrightness;
+	return brightness;
+}
+
+function obstacles(currentIndex, entitiesArray) {
+	var brightness = 0;
+	for (var i = 0; i < entitiesArray.length; i++) {
+		if (distanceFromIndexToIndex[currentIndex][entitiesArray[i].index] <= entitiesArray[i].radius) {
+			brightness -= 128;
+			//pixelArray[currentIndex * 4 + 1] = 127;
+		}
+	}
+	return brightness;
 }
 
 function softPoints(currentIndex, entitiesArray) {
-	var localBrightness = 0;
+	var brightness = 0;
     for (var i = 0; i < entitiesArray.length; i++) {
-		localBrightness += entitiesArray[i].brightness /
+		brightness += entitiesArray[i].brightness /
 		distanceFromIndexToIndex[currentIndex][indexOfCoordinates[entitiesArray[i].x][entitiesArray[i].y]];
 		/*if (i === 0) {
 			if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
@@ -138,7 +197,7 @@ function softPoints(currentIndex, entitiesArray) {
 		}*/
 	}
 	//if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
-	return localBrightness;
+	return brightness;
 }
 
 function updateEntities(entityArray) {

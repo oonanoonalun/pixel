@@ -5,10 +5,11 @@ var canvas = $('canvas')[0],
 	pixelsPerGrid = pixelsPerRow * pixelsPerColumn,
 	scaledPixelSize = canvas.width / pixelsPerRow,
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),
-	pixelArray  = imageData.data,
+	pixelArray = imageData.data,
 	entities = {
 		'lines': [],
 		'points': [],
+		'obstacles': [],
 		'all': []
 	},
 	frameCounter = 1;
@@ -58,6 +59,22 @@ function initializeEntities() {
 		};
 		entities.points.push(point);
 		entities.all.push(point);
+	}
+	for (var k = 0; k < 1; k++) {
+		obstacle = {
+			'x': Math.round(Math.random() * (canvas.width - 1)),
+			'y': Math.round(Math.random() * (canvas.height - 1)),
+			'dx': 0,
+			'vx': 0,
+			'dy': 0,
+			'vy': 0,
+			'maxAcceleration': 0.3,
+			'maxSpeed': 5,
+			'radius': 35,
+			'type': 'obstacle'
+		};
+		entities.obstacles.push(obstacle);
+		entities.all.push(obstacle);
 	}
 }
 

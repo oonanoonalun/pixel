@@ -26,7 +26,7 @@ function mainLoop() {
     );*/
     chasing(entities.points[0], entities.points[1], 1);
     wandering(entities.points[0], 1);
-    fleeing(entities.points[1], entities.points[0], 1);
+    //fleeing(entities.points[1], entities.points[0], 1);
     wandering(entities.points[1], 1);
     /*patrol(
         entities.points[1],
@@ -52,9 +52,11 @@ function mainLoop() {
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
-        brightness += softPoints(i, entities.points);
+        //brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
-        brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 768);
+        //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680);
+        brightness += linesFromIndexToArrayOfIndices(i, 4759, null, 1024);
+        //brightness += obstacles(i, entities.obstacles);
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
