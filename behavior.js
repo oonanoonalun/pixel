@@ -56,7 +56,7 @@ function wandering(entity, accelerationScale) {
 }
 
 
-function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness) {
+function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness, returnLine) {
 	var minX = coordinatesOfIndex[indexA].x,
 		minY = coordinatesOfIndex[indexA].y;
 	if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
@@ -96,21 +96,22 @@ function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness) {
 	if (lineY % 1 >= 0.5) lineY += 1 - lineY % 1;
 	if (lineY % 1 < 0.5 && lineY % 1 > -0.5) lineY -= lineY % 1;
 	if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
-	// this version lights up only the relevant points
-	/*if (indexOfCoordinates[lineX][lineY] === currentIndex) {
-			brightness += 127;
-	}*/
-	// this version creates a soft, distance-based effect
 	// WRONG: this could be dividing by 0, I'm pretty sure
-	return lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
+	// i.e. return brightness to draw a soft line
+	if (!returnLine) return lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
+	// or return an array of the line's indices
+	else {
+		// WRONG TEMP Just for testing
+		if (indexOfCoordinates[lineX][lineY] === currentIndex) rayTargetLineBuffer.push(currentIndex);
+	}
 }
 
 function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndices, lineBrightness) {
 	// WRONG temporarily using top row (indices 0 through 80) instead of arrayOfIndices
 	var brightness = 0;
-	for (var i = 0; i < 80; i++) {
+	for (var i = 0; i < arrayOfIndices.length; i++) {
 		var indexA = originIndex,
-			indexB = i;
+			indexB = arrayOfIndices[i];
 		var minX = coordinatesOfIndex[indexA].x,
 			minY = coordinatesOfIndex[indexA].y;
 		if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
@@ -151,7 +152,7 @@ function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndice
 		if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
 		// this version lights up only the relevant points
 		if (indexOfCoordinates[lineX][lineY] === currentIndex) {
-			brightness += 127;
+			brightness += 1024;
 		}
 	}
 	// WRONG: this could be dividing by 0, I'm pretty sure

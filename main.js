@@ -2,7 +2,13 @@ var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
 
+// WRONG TEMP JUST FOR TESTING
+var rayTargetLine = [],
+    rayTargetLineBuffer = [];
+
 function mainLoop() {
+    // WRONG TEMP Just testing.
+    rayTargetLineBuffer = [];
     // scary point shadow
     //if (frameCounter === 1) entities.points[0].brightness = -1768;
     
@@ -42,10 +48,13 @@ function mainLoop() {
     //wandering(entities.points[0], 1);
     //pace(entities.linesVert[0], 1, false);
     //pace(entities.points[1], 1, false);
+    
+
 
     for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
+        
         
         // add noise
         pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
@@ -54,8 +63,14 @@ function mainLoop() {
         // entities affect brightness
         //brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
-        //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680);
-        brightness += linesFromIndexToArrayOfIndices(i, 4759, null, 1024);
+        //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
+        //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
+        lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, true);
+        brightness += linesFromIndexToArrayOfIndices(
+            i, 4759,
+            rayTargetLine,
+            1024
+        );
         //brightness += obstacles(i, entities.obstacles);
         
         // apply sum brightness to pixel
@@ -76,10 +91,12 @@ function mainLoop() {
         // apply global color effects
         //modifyColors(i);
     }
+    // WRONG TEMP JUST FOR TESTING
+    rayTargetLine = rayTargetLineBuffer;
     // draw pixelArray
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
     context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
-    //countFps(5, 10);    
+    countFps(5, 10);    
     frameCounter++;
 }
