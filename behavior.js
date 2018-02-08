@@ -106,58 +106,127 @@ function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness, retu
 	}
 }
 
-function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndices, lineBrightness) {
-	// WRONG temporarily using top row (indices 0 through 80) instead of arrayOfIndices
+function buildLine(startIndex, endIndex, lineBrightness) {
+	// NOTE: Should probably build collision detection into this function (i.e. make the line a ray, and build rays)
+	var line = {
+		'body': [],
+		'startIndex': startIndex,
+		'brightness': lineBrightness
+		},
+		xTravel = xDistanceFromIndexToIndex[startIndex][endIndex] / scaledPixelSize, // number of pixels/cells moved, total for line
+		yTravel = yDistanceFromIndexToIndex[startIndex][endIndex] / scaledPixelSize,
+		absXTravel = absXDistanceFromIndexToIndex[startIndex][endIndex] / scaledPixelSize, // absolute value of pixels/cells moved, total for line
+		absYTravel = absYDistanceFromIndexToIndex[startIndex][endIndex] / scaledPixelSize,
+		minAxisPolarity = 1,
+		maxAxisPolarity = 1,
+		comma = 0,
+		currentIndex = startIndex; // used to keep track of fractional remainders from "absXTravel / (absYTravel + 1)." Borrowing a term from musical scale construction
+	// build the line's body
+	if (absXDistanceFromIndexToIndex[startIndex][endIndex] >= absYDistanceFromIndexToIndex[startIndex][endIndex]) {
+		if (yTravel < 0) minAxisPolarity = -1;
+		if (xTravel < 0) maxAxisPolarity = -1;
+		comma = absXTravel / absYTravel % 1;
+		for (var k = 0; k < absYTravel; k++) {
+			for (var i = 0; i < absXTravel / absYTravel - comma; i++) {
+				if (comma < 1) comma += absXTravel / absYTravel % 1;
+				else comma = comma % 1;
+				currentIndex += maxAxisPolarity;
+				line.body.push(
+					currentIndex
+				);
+			}
+			currentIndex += minAxisPolarity * pixelsPerRow;
+		}
+	} else {
+		if (xTravel < 0) minAxisPolarity = -1;
+		if (yTravel < 0) maxAxisPolarity = -1;
+		comma = absYTravel / absXTravel % 1;
+		for (var j = 0; j < absXTravel; j++) {
+			for (var m = 0; m < absYTravel / absXTravel - comma; m++) {
+				if (comma < 1) comma += absYTravel / absXTravel % 1;
+				else comma = comma % 1;
+				currentIndex += maxAxisPolarity * pixelsPerRow;
+				line.body.push(
+					currentIndex
+				);
+			}
+			currentIndex += minAxisPolarity;
+		}
+	}
+	return line;
+}
+
+function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndices, lineWidth, lineBrightness, isSoft) {
 	var brightness = 0;
 	for (var i = 0; i < arrayOfIndices.length; i++) {
-		var indexA = originIndex,
-			indexB = arrayOfIndices[i];
-		var minX = coordinatesOfIndex[indexA].x,
-			minY = coordinatesOfIndex[indexA].y;
-		if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
-		if (minY > coordinatesOfIndex[indexB].y) minY = coordinatesOfIndex[indexB].y;
-		var xDiff = absXDistanceFromIndexToIndex[indexA][indexB],
-			yDiff = absYDistanceFromIndexToIndex[indexA][indexB];
-		// avoiding dividing by 0
-		if (xDiff === 0) xDiff = 0.01;
-		if (yDiff === 0) yDiff = 0.01;
-		var paraX = (
-				(coordinatesOfIndex[currentIndex].x - minX) /
-				xDiff
-			); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
-		var paraY = (
-				(coordinatesOfIndex[currentIndex].y - minY) /
-				yDiff
-			);
-		if (paraX > 1) paraX = 1;
-		if (paraX < 0) paraX = 0;
-		if (paraY > 1) paraY = 1;
-		if (paraY < 0) paraY = 0;
-		// WRONG, probably. Seems like there should be a more elegant way to derive the correct parametric values. (Maybe for the above limiting as well.)
-		if (
-			(minX === coordinatesOfIndex[indexB].x && minY === coordinatesOfIndex[indexA].y) ||
-			(minX === coordinatesOfIndex[indexA].x && minY === coordinatesOfIndex[indexB].y)
-		) {
-			paraX = 1 - paraX;
-			paraY = 1 - paraY;
-		}
-		// in-line rounding to avoid a function call
-		var lineX = paraY * xDiff + minX,
-			lineY = paraX * yDiff + minY;
-		if (lineX % 1 >= 0.5) lineX += 1 - lineX % 1;
-		if (lineX % 1 < 0.5 && lineX % 1 > -0.5) lineX -= lineX % 1;
-		if (lineX % 1 <= -0.5) lineX -= 1 + lineX % 1;
-		if (lineY % 1 >= 0.5) lineY += 1 - lineY % 1;
-		if (lineY % 1 < 0.5 && lineY % 1 > -0.5) lineY -= lineY % 1;
-		if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
-		// this version lights up only the relevant points
-		if (indexOfCoordinates[lineX][lineY] === currentIndex) {
-			brightness += 1024;
+		if (i % 1 === 0) {
+			var indexA = originIndex,
+				indexB = arrayOfIndices[i];
+			var minX = coordinatesOfIndex[indexA].x,
+				minY = coordinatesOfIndex[indexA].y;
+			if (minX > coordinatesOfIndex[indexB].x) minX = coordinatesOfIndex[indexB].x;
+			if (minY > coordinatesOfIndex[indexB].y) minY = coordinatesOfIndex[indexB].y;
+			var xDiff = absXDistanceFromIndexToIndex[indexA][indexB],
+				yDiff = absYDistanceFromIndexToIndex[indexA][indexB];
+			// avoiding dividing by 0
+			if (xDiff === 0) xDiff = 0.01;
+			if (yDiff === 0) yDiff = 0.01;
+			
+			// setting parametric locations of the current index relative to the x and y spaces between indices A and B
+			var paraX = (
+					(coordinatesOfIndex[currentIndex].x - minX) /
+					xDiff
+				); // parametric location of current index's x coordinate between indexA and indexB, starting from indexA
+			var paraY = (
+					(coordinatesOfIndex[currentIndex].y - minY) /
+					yDiff
+				);
+			if (paraX >= 0 && paraX <= 1 && paraY >= 0 && paraY <= 1) { // i.e. if the current index is within the bounds of the rectangle implied by indices A and B
+				// NOTE: The line above (checking parametric stuff) would be where to tweak to create lines that went extended indefinitely
+				// WRONG, probably. Seems like there should be a more elegant way to derive the correct parametric values.
+				// This 'if' check rectifies a problem where in if indexB is to the upper right or lower left of indexA, the line draws from the upper left to the lower right corners of the rectangle implied by indices A and B
+				if (
+					(minX === coordinatesOfIndex[indexB].x && minY === coordinatesOfIndex[indexA].y) ||
+					(minX === coordinatesOfIndex[indexA].x && minY === coordinatesOfIndex[indexB].y)
+				) {
+					paraX = 1 - paraX;
+					paraY = 1 - paraY;
+				}
+				
+				// NOTE: I need a better comment to describe what's going on here
+				// This basically defines the line
+				// WRONG: this creates patchy lines
+				var lineX = paraY * xDiff + minX,
+					lineY = paraX * yDiff + minY;
+					
+				// in-line rounding to avoid a function call
+				// rounding necessary for using the indexOfCoordinates[][] array
+				if (lineX % 1 >= 0.5) lineX += 1 - lineX % 1;
+				if (lineX % 1 < 0.5 && lineX % 1 > -0.5) lineX -= lineX % 1;
+				if (lineX % 1 <= -0.5) lineX -= 1 + lineX % 1;
+				if (lineY % 1 >= 0.5) lineY += 1 - lineY % 1;
+				if (lineY % 1 < 0.5 && lineY % 1 > -0.5) lineY -= lineY % 1;
+				if (lineY % 1 <= -0.5) lineY -= 1 + lineY % 1;
+				
+				// this version lights up only the relevant points
+				if (!isSoft) {
+					/*if (indexOfCoordinates[lineX][lineY] === currentIndex) {
+						brightness += lineBrightness;
+					}*/
+					// WRONG, maybe. Is this a kludge that doesn't really fix the patchy-line problem?
+					if (coordinatesOfIndex[currentIndex].x < lineX + lineWidth * 0.5 &&
+						coordinatesOfIndex[currentIndex].x > lineX - lineWidth * 0.5) {
+						//brightness += lineBrightness;
+						brightness += lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
+					}
+				// this version creates a soft, distance-based effect
+				} else brightness += lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
+			}
 		}
 	}
 	// WRONG: this could be dividing by 0, I'm pretty sure
 	// this version creates a soft, distance-based effect.
-	//return lineBrightness / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
+	//return 768 / distanceFromIndexToIndex[currentIndex][indexOfCoordinates[lineX][lineY]];
 	return brightness;
 }
 
