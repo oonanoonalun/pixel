@@ -82,3 +82,17 @@ var relativeMousePosition = (element) => {
 // end mouse
 //////////////////////////
 
+function pointZeroControls(acceleration) {
+	// left handed
+	if (keysDown[KEY_E]) entities.points[0].dy -= acceleration;
+	if (keysDown[KEY_D]) entities.points[0].dy += acceleration;
+	if (keysDown[KEY_S]) entities.points[0].dx -= acceleration;
+	if (keysDown[KEY_F]) entities.points[0].dx += acceleration;
+	
+	// right handed
+	if (keysDown[KEY_I]) entities.points[0].dy -= acceleration;
+	if (keysDown[KEY_K]) entities.points[0].dy += acceleration;
+	if (keysDown[KEY_J]) entities.points[0].dx -= acceleration;
+	if (keysDown[KEY_L]) entities.points[0].dx += acceleration;
+}
+

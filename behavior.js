@@ -107,7 +107,6 @@ function lineFromIndexToIndex(currentIndex, indexA, indexB, lineBrightness, retu
 }
 
 function buildLine(startIndex, endIndex, lineBrightness) {
-	// NOTE: Should probably build collision detection into this function (i.e. make the line a ray, and build rays)
 	var line = {
 		'body': [],
 		'startIndex': startIndex,
@@ -244,6 +243,68 @@ function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndice
 	return brightness;
 }
 
+function updateSpotlight(parent, targetIndex, brightness, width, density, isSoft) {
+	// WARNING/WRONG: .push() function calls!!!
+	// clear old spotlight lines
+	parent.spotlight.lines = [];
+	// NOTE: might want to make fewer beam lines than a full beam, then only draw 1/3 to 1/2 of them per frame, interlaced
+	var line = [],
+		xTravel = xDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize, // number of pixels/cells moved, total for line
+		yTravel = yDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize,
+		absXTravel = absXDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize, // absolute value of pixels/cells moved, total for line
+		absYTravel = absYDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize,
+		minAxisPolarity = 1,
+		maxAxisPolarity = 1,
+		comma = 0, // used to keep track of fractional remainders from "absXTravel / (absYTravel + 1)." Borrowing a term from musical scale construction
+		target = targetIndex,
+		currentIndex = parent.index;
+	// build the line's body
+	// WRONG, probably. It would be great not to repeat this code depending on whether x or y is bigger
+	if (absXDistanceFromIndexToIndex[parent.index][target] >= absYDistanceFromIndexToIndex[parent.index][target]) {
+		if (yTravel < 0) minAxisPolarity = -1;
+		if (xTravel < 0) maxAxisPolarity = -1;
+		comma = absXTravel / absYTravel % 1;
+		for (var k = 0; k < absYTravel; k++) {
+			if (currentIndex > 2425 && currentIndex < 2455) {
+				pixelArray[currentIndex * 4 + 0] += 127;
+				break; // ad hoc shadow-creating barrier
+			} else {
+				var nextXTravel = absXDistanceFromIndexToIndex[currentIndex][target] / absYDistanceFromIndexToIndex[currentIndex][target] - comma;
+				for (var i = 0; i < nextXTravel; i++) {
+					line.push(
+						currentIndex
+					);
+					pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+					currentIndex += maxAxisPolarity;
+				}
+				currentIndex += minAxisPolarity * pixelsPerRow;
+			}
+		}
+	} else {
+		if (xTravel < 0) minAxisPolarity = -1;
+		if (yTravel < 0) maxAxisPolarity = -1;
+		comma = absYTravel / absXTravel % 1;
+		for (var j = 0; j < absXTravel; j++) {
+			var nextYTravel = absYDistanceFromIndexToIndex[currentIndex][target] / absXDistanceFromIndexToIndex[currentIndex][target] - comma;
+			for (var m = 0; m < nextYTravel; m++) {
+				if (currentIndex > 2425 && currentIndex < 2455) {
+					// NOTE: this check goes in whichever one of the two nested loops only increments 1 per loop, so that a barrier doesn't get skipped over
+					pixelArray[currentIndex * 4 + 0] += 127;
+					break; // ad hoc shadow-creating barrier
+				} else {
+					line.push( // maybe unnecessary
+						currentIndex
+					);
+					pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+					currentIndex += maxAxisPolarity * pixelsPerRow;
+				}
+			}
+			currentIndex += minAxisPolarity;
+		}
+	}
+	parent.spotlight.lines.push(line); // maybe unnecessary
+}
+
 function softLines(currentIndex, entitiesArray) {
 	var brightness = 0;
 	for (var i = 0; i < entitiesArray.length; i++) {
@@ -314,11 +375,13 @@ function updateEntities(entityArray) {
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
 		// friction applied to speed
-		//entity.vx *= 0.5;
-		//entity.vy *= 0.5;
+		entity.vx *= 0.9;
+		entity.vy *= 0.9;
+		
 		// speed applied to position
 		entity.x += entity.vx;
 		entity.y += entity.vy;
+		
 		// x and y rounded (important or indexOfCoordinates[entity.x][enitity.y] won't work)
 		// avoiding a Math.round() function call
 		// WARNING: Rounding here will create some subtle inconsistencies in movement.

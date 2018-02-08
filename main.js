@@ -1,10 +1,9 @@
-var frameRate = 300;
+var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
 
 // WRONG TEMP JUST FOR TESTING
-var rayTargetLine = [],
-    rayTargetLineBuffer = [];
+var rayTargetLine = [];
 
 function mainLoop() {
     // updating entity position, speed, acceleration, and nearest index
@@ -14,6 +13,8 @@ function mainLoop() {
     // WARNING: anything that happens before updateEntities() in the main loop might be missing information assigned intitially by the
     //      first pass of udpateEntities() (i.e. entities.points[n].index);
     updateEntities(entities.all);
+    updateSpotlight(entities.points[0], entities.points[1].index, 2048, 5, 5, false);
+    
     
     //var lines = [buildLine(entities.points[0].index, entities.points[1].index, 1024)];
     /*for (var j = 0; j < pixelsPerRow; j++) {
@@ -21,9 +22,9 @@ function mainLoop() {
     }*/
     // WRONG TEMP Just testing.
     //rayTargetLineBuffer = [];
-    entities.points[0].index = 4720;
-    rayTargetLine = buildLine(entities.points[0].index, entities.points[1].index, 5120);
-    var lines = buildLinesFromIndexToArrayOfIndices(55, rayTargetLine.body, 7680);
+    //entities.points[0].index = 4720;
+    //rayTargetLine = buildLine(entities.points[0].index, entities.points[1].index, 5120);
+    //var lines = buildLinesFromIndexToArrayOfIndices(55, rayTargetLine.body, 7680);
     // scary point shadow
     //if (frameCounter === 1) entities.points[0].brightness = -1768;
     
@@ -33,6 +34,9 @@ function mainLoop() {
     // mouse position is controlling entities.points[1]
     entities.points[1].x = currentMousePosition.x;
     entities.points[1].y = currentMousePosition.y;
+    
+    // keyboard controls entities.points[0]
+    pointZeroControls(1);
     
     
     // entity autonomous movement
@@ -59,7 +63,6 @@ function mainLoop() {
     //pace(entities.linesVert[0], 1, false);
     //pace(entities.points[1], 1, false);
     
-
     // looping through each pixel
     for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
@@ -81,9 +84,11 @@ function mainLoop() {
         
         //brightness += obstacles(i, entities.obstacles);
         
+        // working on a spotlight
+        //for (var p = 0; p < )
         
         // drawing a raycasting spotlight
-        for (var k = 0; k < lines.length; k++) {
+        /*for (var k = 0; k < lines.length; k++) {
             var line = lines[k];
             for (var m = 0; m < line.body.length; m++) {
                 if (i === line.body[m]) brightness += (
@@ -91,7 +96,7 @@ function mainLoop() {
                     line.brightness / distanceFromIndexToIndex[line.startIndex][i]
                 );
             }
-        }
+        }*/
        
         
         // apply sum brightness to pixel
@@ -99,7 +104,7 @@ function mainLoop() {
         
         // brightness decay
         pixelArray[i * 4 + 0] -= 3; // -= 3 is a nice decay rate for a solid afterimage
-        pixelArray[i * 4 + 1] -= 3;
+        //pixelArray[i * 4 + 1] -= 3;
         //pixelArray[i * 4 + 2] -= 2;
         
         // greyscale
@@ -112,15 +117,20 @@ function mainLoop() {
         //if (i === entities.points[1].index) pixelArray[i * 4 + 1] = 255; 
         
         // drawing ray target line
-        for (var n = 0; n < rayTargetLine.body.length; n++) {
-            if (i === rayTargetLine.body[n]) brightness += 2048;// / distanceFromIndexToIndex[i][rayTargetLine.body[n]];
-        }
+        /*for (var n = 0; n < rayTargetLine.body.length; n++) {
+            if (i === rayTargetLine.body[n]) {
+                //brightness += 2048;// / distanceFromIndexToIndex[i][rayTargetLine.body[n]];
+                pixelArray[i * 4 + 0] += 2048;
+                pixelArray[i * 4 + 1] = 0;
+                pixelArray[i * 4 + 2] = 0;
+            }
+        }*/
         
-        // drawing ad hoc shadow-creating barrier
-        /*if (i > 2435 && i < 2445) {
-            pixelArray[i * 4 + 0] += 2048;
-            pixelArray[i * 4 + 1] -= 32;
-            pixelArray[i * 4 + 2] -= 32;
+        // making ad hoc shadow-creating barrier red
+        /*if (i > 2425 && i < 2455) {
+            pixelArray[i * 4 + 0] += 255;
+            pixelArray[i * 4 + 1] = 0;
+            pixelArray[i * 4 + 2] = 0;
         }*/
         
         // equalize

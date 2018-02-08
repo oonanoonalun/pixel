@@ -10,6 +10,7 @@ var canvas = $('canvas')[0],
 		'lines': [],
 		'points': [],
 		'obstacles': [],
+		'spotlights': [],
 		'all': []
 	},
 	frameCounter = 1;
@@ -50,8 +51,8 @@ function initializeEntities() {
 			'vx': 0,
 			'dy': 0,
 			'vy': 0,
-			'maxAcceleration': 0.3,
-			'maxSpeed': 5,
+			'maxAcceleration': 3,
+			'maxSpeed': 10,
 			'brightness': 4096,
 			'type': 'point',
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
@@ -76,6 +77,16 @@ function initializeEntities() {
 		entities.obstacles.push(obstacle);
 		entities.all.push(obstacle);
 	}
+	var spotlight = {
+		'lines': [],
+		'parent': entities.points[0],
+		'targetIndex': entities.points[1],
+		'brightness': 2048,
+		'width': 10,
+		'density': 5,
+		'isSoft': false
+	};
+	entities.points[0].spotlight = spotlight;
 }
 
 function initializeRGBAChannels() {
