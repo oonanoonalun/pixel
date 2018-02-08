@@ -127,14 +127,16 @@ function buildLine(startIndex, endIndex, lineBrightness) {
 		if (xTravel < 0) maxAxisPolarity = -1;
 		comma = absXTravel / absYTravel % 1;
 		for (var k = 0; k < absYTravel; k++) {
-			for (var i = 0; i < absXTravel / absYTravel - comma; i++) {
-				if (comma < 1) comma += absXTravel / absYTravel % 1;
-				else comma = comma % 1;
-				currentIndex += maxAxisPolarity;
-				if (currentIndex > 2420 && currentIndex < 2460) return line;
+			var nextXTravel = absXDistanceFromIndexToIndex[currentIndex][endIndex] / absYDistanceFromIndexToIndex[currentIndex][endIndex] - comma;
+			for (var i = 0; i < nextXTravel; i++) {
+				if (currentIndex > 2435 && currentIndex < 2445) {
+					pixelArray[currentIndex * 4 + 0] += 127;
+					return line; // ad hoc shadow
+				}
 				else line.body.push(
 					currentIndex
 				);
+				currentIndex += maxAxisPolarity;
 			}
 			currentIndex += minAxisPolarity * pixelsPerRow;
 		}
@@ -143,14 +145,16 @@ function buildLine(startIndex, endIndex, lineBrightness) {
 		if (yTravel < 0) maxAxisPolarity = -1;
 		comma = absYTravel / absXTravel % 1;
 		for (var j = 0; j < absXTravel; j++) {
-			for (var m = 0; m < absYTravel / absXTravel - comma; m++) {
-				if (comma < 1) comma += absYTravel / absXTravel % 1;
-				else comma = comma % 1;
-				if (currentIndex > 2435 && currentIndex < 2445) return line;
-				else currentIndex += maxAxisPolarity * pixelsPerRow;
-				line.body.push(
+			var nextYTravel = absYDistanceFromIndexToIndex[currentIndex][endIndex] / absXDistanceFromIndexToIndex[currentIndex][endIndex] - comma;
+			for (var m = 0; m < nextYTravel; m++) {
+				if (currentIndex > 2435 && currentIndex < 2445) {
+					pixelArray[currentIndex * 4 + 0] += 127;
+					return line; // ad hoc shadow
+				}
+				else line.body.push(
 					currentIndex
 				);
+				currentIndex += maxAxisPolarity * pixelsPerRow;
 			}
 			currentIndex += minAxisPolarity;
 		}

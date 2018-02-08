@@ -21,9 +21,9 @@ function mainLoop() {
     }*/
     // WRONG TEMP Just testing.
     //rayTargetLineBuffer = [];
-        entities.points[0].index = 0;
+    entities.points[0].index = 4720;
     rayTargetLine = buildLine(entities.points[0].index, entities.points[1].index, 5120);
-    var lines = buildLinesFromIndexToArrayOfIndices(4759, rayTargetLine.body, 15360);
+    var lines = buildLinesFromIndexToArrayOfIndices(55, rayTargetLine.body, 7680);
     // scary point shadow
     //if (frameCounter === 1) entities.points[0].brightness = -1768;
     
@@ -60,7 +60,7 @@ function mainLoop() {
     //pace(entities.points[1], 1, false);
     
 
-
+    // looping through each pixel
     for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
@@ -79,8 +79,10 @@ function mainLoop() {
         //lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, true);
         //brightness += linesFromIndexToArrayOfIndices(i, 4759, rayTargetLine.body, scaledPixelSize * 10, 1024, true);
         
-        brightness += obstacles(i, entities.obstacles);
+        //brightness += obstacles(i, entities.obstacles);
         
+        
+        // drawing a raycasting spotlight
         for (var k = 0; k < lines.length; k++) {
             var line = lines[k];
             for (var m = 0; m < line.body.length; m++) {
@@ -90,17 +92,36 @@ function mainLoop() {
                 );
             }
         }
+       
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         
         // brightness decay
         pixelArray[i * 4 + 0] -= 3; // -= 3 is a nice decay rate for a solid afterimage
-        //pixelArray[i * 4 + 1] -= 3;
+        pixelArray[i * 4 + 1] -= 3;
         //pixelArray[i * 4 + 2] -= 2;
         
         // greyscale
         pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
+        
+        
+        //drawing some stuff in color, after grescaling
+        
+        // drawing entities.points[1]
+        //if (i === entities.points[1].index) pixelArray[i * 4 + 1] = 255; 
+        
+        // drawing ray target line
+        for (var n = 0; n < rayTargetLine.body.length; n++) {
+            if (i === rayTargetLine.body[n]) brightness += 2048;// / distanceFromIndexToIndex[i][rayTargetLine.body[n]];
+        }
+        
+        // drawing ad hoc shadow-creating barrier
+        /*if (i > 2435 && i < 2445) {
+            pixelArray[i * 4 + 0] += 2048;
+            pixelArray[i * 4 + 1] -= 32;
+            pixelArray[i * 4 + 2] -= 32;
+        }*/
         
         // equalize
         //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 1;
@@ -113,6 +134,6 @@ function mainLoop() {
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
     context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
-    countFps(5, 10);    
+    countFps(2, 10);    
     frameCounter++;
 }
