@@ -257,6 +257,7 @@ function updateSpotlight(parent, targetIndex, brightness, width, density, isSoft
 		maxAxisPolarity = 1,
 		comma = 0, // used to keep track of fractional remainders from "absXTravel / (absYTravel + 1)." Borrowing a term from musical scale construction
 		target = targetIndex,
+		//targetIndices = [targetIndex, 4799, 4759, 4720, 2400, 2479],
 		currentIndex = parent.index;
 	// build the line's body
 	// WRONG, probably. It would be great not to repeat this code depending on whether x or y is bigger
@@ -375,8 +376,8 @@ function updateEntities(entityArray) {
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
 		// friction applied to speed
-		entity.vx *= 0.9;
-		entity.vy *= 0.9;
+		entity.vx *= 0.84;
+		entity.vy *= 0.84;
 		
 		// speed applied to position
 		entity.x += entity.vx;

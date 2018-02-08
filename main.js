@@ -36,7 +36,7 @@ function mainLoop() {
     entities.points[1].y = currentMousePosition.y;
     
     // keyboard controls entities.points[0]
-    pointZeroControls(1);
+    pointZeroControls(5);
     
     
     // entity autonomous movement
@@ -74,7 +74,7 @@ function mainLoop() {
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
-        //brightness += softPoints(i, entities.points);
+        brightness += softPoints(i, entities.points);
         //brightness += softLines(i, entities.lines);
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
         
@@ -97,8 +97,8 @@ function mainLoop() {
                 );
             }
         }*/
-       
-        
+
+
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         

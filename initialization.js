@@ -51,8 +51,8 @@ function initializeEntities() {
 			'vx': 0,
 			'dy': 0,
 			'vy': 0,
-			'maxAcceleration': 3,
-			'maxSpeed': 10,
+			'maxAcceleration': 5,
+			'maxSpeed': 25,
 			'brightness': 4096,
 			'type': 'point',
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
