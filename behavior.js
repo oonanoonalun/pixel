@@ -131,7 +131,8 @@ function buildLine(startIndex, endIndex, lineBrightness) {
 				if (comma < 1) comma += absXTravel / absYTravel % 1;
 				else comma = comma % 1;
 				currentIndex += maxAxisPolarity;
-				line.body.push(
+				if (currentIndex > 2420 && currentIndex < 2460) return line;
+				else line.body.push(
 					currentIndex
 				);
 			}
@@ -145,7 +146,8 @@ function buildLine(startIndex, endIndex, lineBrightness) {
 			for (var m = 0; m < absYTravel / absXTravel - comma; m++) {
 				if (comma < 1) comma += absYTravel / absXTravel % 1;
 				else comma = comma % 1;
-				currentIndex += maxAxisPolarity * pixelsPerRow;
+				if (currentIndex > 2435 && currentIndex < 2445) return line;
+				else currentIndex += maxAxisPolarity * pixelsPerRow;
 				line.body.push(
 					currentIndex
 				);
@@ -154,6 +156,14 @@ function buildLine(startIndex, endIndex, lineBrightness) {
 		}
 	}
 	return line;
+}
+
+function buildLinesFromIndexToArrayOfIndices(originIndex, arrayOfIndices, lineBrightness) {
+	var lines = [];
+	for (var i = 0; i < arrayOfIndices.length; i++) {
+		lines.push(buildLine(originIndex, arrayOfIndices[i], lineBrightness));
+	}
+	return lines;
 }
 
 function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndices, lineWidth, lineBrightness, isSoft) {

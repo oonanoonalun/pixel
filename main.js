@@ -15,12 +15,15 @@ function mainLoop() {
     //      first pass of udpateEntities() (i.e. entities.points[n].index);
     updateEntities(entities.all);
     
-    var lines = [buildLine(entities.points[0].index, entities.points[1].index, 1024)];
+    //var lines = [buildLine(entities.points[0].index, entities.points[1].index, 1024)];
     /*for (var j = 0; j < pixelsPerRow; j++) {
         lines.push(buildLine(4759, j + 320, 10000));
     }*/
     // WRONG TEMP Just testing.
-    rayTargetLineBuffer = [];
+    //rayTargetLineBuffer = [];
+        entities.points[0].index = 0;
+    rayTargetLine = buildLine(entities.points[0].index, entities.points[1].index, 5120);
+    var lines = buildLinesFromIndexToArrayOfIndices(4759, rayTargetLine.body, 15360);
     // scary point shadow
     //if (frameCounter === 1) entities.points[0].brightness = -1768;
     
@@ -30,6 +33,7 @@ function mainLoop() {
     // mouse position is controlling entities.points[1]
     entities.points[1].x = currentMousePosition.x;
     entities.points[1].y = currentMousePosition.y;
+    
     
     // entity autonomous movement
     /*chasing(
@@ -72,16 +76,20 @@ function mainLoop() {
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
         
         // raycasting work
-        lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, true);
-        brightness += linesFromIndexToArrayOfIndices(i, 4759, rayTargetLine, scaledPixelSize * 10, 1024, true);
+        //lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, true);
+        //brightness += linesFromIndexToArrayOfIndices(i, 4759, rayTargetLine.body, scaledPixelSize * 10, 1024, true);
         
-        //brightness += obstacles(i, entities.obstacles);
-        /*for (var k = 0; k < lines.length; k++) {
+        brightness += obstacles(i, entities.obstacles);
+        
+        for (var k = 0; k < lines.length; k++) {
             var line = lines[k];
             for (var m = 0; m < line.body.length; m++) {
-                if (i === line.body[m]) brightness += line.brightness;// / distanceFromIndexToIndex[line.startIndex][line.body[j]];
+                if (i === line.body[m]) brightness += (
+                    line.brightness / distanceFromIndexToIndex[line.startIndex][line.body[m]] +
+                    line.brightness / distanceFromIndexToIndex[line.startIndex][i]
+                );
             }
-        }*/
+        }
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
@@ -101,8 +109,6 @@ function mainLoop() {
         // apply global color effects
         //modifyColors(i);
     }
-    // WRONG TEMP JUST FOR TESTING
-    rayTargetLine = rayTargetLineBuffer;
     // draw pixelArray
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
