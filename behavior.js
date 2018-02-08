@@ -355,6 +355,59 @@ function softPoints(currentIndex, entitiesArray) {
 	return brightness;
 }
 
+function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
+	// build the line's body
+	var currentIndex = originIndex,
+		currentCoords = {
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		collided = false,
+		xStep,
+		yStep,
+		mag,
+		absXMag = xMagnitude,
+		absYMag = yMagnitude,
+		roundedX = currentCoords.x,
+		roundedY = currentCoords.y;
+	if (absXMag < 0) absXMag = -absXMag;
+	if (absYMag < 0) absYMag = -absYMag;
+	mag = absXMag + absYMag;
+	xStep = xMagnitude / mag * scaledPixelSize;
+	yStep = yMagnitude / mag * scaledPixelSize;
+	while (
+		currentIndex < pixelsPerGrid && currentIndex >= 0 &&
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&
+		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
+		!collided
+	) {
+		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+		roundedX = currentCoords.x;
+		roundedY = currentCoords.y;
+		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+
+		// checking for collisions
+		if (currentIndex > 2425 && currentIndex < 2455) {
+			pixelArray[currentIndex * 4 + 0] += 127;
+			collided = true; // ad hoc shadow-creating barrier
+		} else {
+			// applying lighting
+			// WARNING: haven't checked what this currentIndex assignment is doing, and if it's in the right place
+			currentIndex = indexOfCoordinates[roundedX][roundedY];
+			pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[originIndex][currentIndex];
+		}
+		
+		// incrementing for next loop
+		currentCoords.x += xStep;
+		currentCoords.y += yStep;
+	}
+}
+
 function updateEntities(entityArray) {
 	// for each entity:
 	// 		acceleration limited and applied to speed
