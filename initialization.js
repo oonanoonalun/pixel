@@ -53,7 +53,7 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 5,
 			'maxSpeed': 25,
-			'brightness': 4096,
+			'brightness': 3072,
 			'type': 'point',
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
 			'shouldBeRemoved': false // WRONG: Doesn't need to be initialized. Same for lines.

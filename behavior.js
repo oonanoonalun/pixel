@@ -271,14 +271,19 @@ function updateSpotlight(parent, targetIndex, brightness, width, density, isSoft
 				break; // ad hoc shadow-creating barrier
 			} else {
 				var nextXTravel = absXDistanceFromIndexToIndex[currentIndex][target] / absYDistanceFromIndexToIndex[currentIndex][target] - comma;
-				for (var i = 0; i < nextXTravel; i++) {
-					line.push(
-						currentIndex
-					);
-					pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
-					currentIndex += maxAxisPolarity;
+				if (currentIndex > 2425 && currentIndex < 2455) {
+					pixelArray[currentIndex * 4 + 0] += 127;
+					break; // ad hoc shadow-creating barrier
+				} else {
+					for (var i = 0; i < nextXTravel; i++) {
+						line.push(
+							currentIndex
+						);
+						pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+						currentIndex += maxAxisPolarity;
+					}
+					currentIndex += minAxisPolarity * pixelsPerRow;
 				}
-				currentIndex += minAxisPolarity * pixelsPerRow;
 			}
 		}
 	} else {
@@ -287,20 +292,24 @@ function updateSpotlight(parent, targetIndex, brightness, width, density, isSoft
 		comma = absYTravel / absXTravel % 1;
 		for (var j = 0; j < absXTravel; j++) {
 			var nextYTravel = absYDistanceFromIndexToIndex[currentIndex][target] / absXDistanceFromIndexToIndex[currentIndex][target] - comma;
-			for (var m = 0; m < nextYTravel; m++) {
-				if (currentIndex > 2425 && currentIndex < 2455) {
-					// NOTE: this check goes in whichever one of the two nested loops only increments 1 per loop, so that a barrier doesn't get skipped over
+			if (currentIndex > 2425 && currentIndex < 2455) {
 					pixelArray[currentIndex * 4 + 0] += 127;
 					break; // ad hoc shadow-creating barrier
-				} else {
-					line.push( // maybe unnecessary
-						currentIndex
-					);
-					pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
-					currentIndex += maxAxisPolarity * pixelsPerRow;
+			} else {
+				for (var m = 0; m < nextYTravel; m++) {
+					if (currentIndex > 2425 && currentIndex < 2455) {
+						pixelArray[currentIndex * 4 + 0] += 127;
+						break; // ad hoc shadow-creating barrier
+					} else {
+						line.push( // maybe unnecessary
+							currentIndex
+						);
+						pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+						currentIndex += maxAxisPolarity * pixelsPerRow;
+					}
 				}
+				currentIndex += minAxisPolarity;
 			}
-			currentIndex += minAxisPolarity;
 		}
 	}
 	parent.spotlight.lines.push(line); // maybe unnecessary
@@ -363,6 +372,11 @@ function updateEntities(entityArray) {
 			entity.dx *= entity.maxAcceleration / (absDx + absDy);
 			entity.dy *= entity.maxAcceleration / (absDx + absDy);
 		}
+		
+		// acceleration decays
+		//entity.dx *= 0.5;
+		//entity.dy *= 0.5;
+		
 		// acceleration applied to speed
 		entity.vx += entity.dx;
 		entity.vy += entity.dy;
@@ -376,8 +390,8 @@ function updateEntities(entityArray) {
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
 		// friction applied to speed
-		entity.vx *= 0.84;
-		entity.vy *= 0.84;
+		entity.vx *= 0.9;
+		entity.vy *= 0.9;
 		
 		// speed applied to position
 		entity.x += entity.vx;

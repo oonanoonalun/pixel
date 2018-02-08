@@ -36,7 +36,7 @@ function mainLoop() {
     entities.points[1].y = currentMousePosition.y;
     
     // keyboard controls entities.points[0]
-    pointZeroControls(5);
+    pointZeroControls(4);
     
     
     // entity autonomous movement
@@ -74,7 +74,7 @@ function mainLoop() {
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
-        brightness += softPoints(i, entities.points);
+        brightness += softPoints(i, [entities.points[0]]);
         //brightness += softLines(i, entities.lines);
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
         
@@ -85,7 +85,16 @@ function mainLoop() {
         //brightness += obstacles(i, entities.obstacles);
         
         // working on a spotlight
-        //for (var p = 0; p < )
+        // glowing spotlight beam
+        // DOESN'T REALLY WORK
+        /*for (var p = 0; p < entities.points[0].spotlight.lines[0].length; p++) {
+            brightness += (
+                entities.points[0].spotlight.brightness / 4 /
+                distanceFromIndexToIndex[entities.points[0].spotlight.lines[0][p]][i] // /
+                //(distanceFromIndexToIndex[entities.points[0].index][i] / 3)
+            );
+            //if (i === entities.points[0].spotlight.lines[0][p]) pixelArray[i * 4 + 0] -= 64;
+        }*/
         
         // drawing a raycasting spotlight
         /*for (var k = 0; k < lines.length; k++) {
@@ -103,7 +112,7 @@ function mainLoop() {
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         
         // brightness decay
-        pixelArray[i * 4 + 0] -= 3; // -= 3 is a nice decay rate for a solid afterimage
+        pixelArray[i * 4 + 0] *= 0.88;//-= 3; // -= 3 is a nice decay rate for a solid afterimage
         //pixelArray[i * 4 + 1] -= 3;
         //pixelArray[i * 4 + 2] -= 2;
         
