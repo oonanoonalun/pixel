@@ -2,14 +2,20 @@ var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
 
+// WRONG just testing
+var beamTargets = [entities.points[1].index];
+
 function mainLoop() {
     // updating entity position, speed, acceleration, nearest index, and child positions
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
     //      the entities are in two arrays (entities.lines/point and entitiies.all);
     //      Maybe ask Chris about this.
     controls(4, entities.points[0].spotlight.narrowness);
-    updateSpotlight(entities.points[0], entities.points[1].index, 2048);
+    updateSpotlight(entities.points[0], /*entities.points[1].index*/ beamTargets, 384);
     updateEntities(entities.all);
+    
+    //WRONG Just testing
+    beamTargets = [];
     
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
@@ -53,9 +59,14 @@ function mainLoop() {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
         
+        // WRONG just testing
+        if (distanceFromIndexToIndex[i][entities.points[1].index] < 100) {
+            beamTargets.push(i);
+        }
+        
         
         // add noise
-        pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
+        //pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
@@ -65,6 +76,14 @@ function mainLoop() {
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
+        
+        // blend
+        var neighborsBrightness = 0;
+        for (var k = 0; k < neighborsOfIndex[i].length; k ++) {
+            neighborsBrightness += pixelArray[i * 4 + 0];
+        }
+        neighborsBrightness /= neighborsOfIndex[i].length + 1;
+        brightness += neighborsBrightness;
         
         // brightness decay
         pixelArray[i * 4 + 0] *= 0.88;//-= 3; // -= 3 is a nice decay rate for a solid afterimage

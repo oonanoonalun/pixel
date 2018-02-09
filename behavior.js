@@ -56,9 +56,12 @@ function wandering(entity, accelerationScale) {
 	entity.dy += yDistance / magnitude * accelerationScale;
 }
 
-function updateSpotlight(parent, centerTargetIndex, brightness) {
+function updateSpotlight(parent, targetsArray, brightness) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
-	var arrayOfTargetIndices = [
+	// WRONG just testing
+	var arrayOfTargetIndices = targetsArray;
+	// WRONG just testing (i.e. should be commented back in)
+	/*var arrayOfTargetIndices = [
 		centerTargetIndex,
 		centerTargetIndex - 1,
 		centerTargetIndex - 2,
@@ -85,7 +88,7 @@ function updateSpotlight(parent, centerTargetIndex, brightness) {
 		centerTargetIndex + 1 * pixelsPerRow - 1,
 		centerTargetIndex + 2 * pixelsPerRow - 1,
 		centerTargetIndex + 3 * pixelsPerRow - 1,
-	];
+	];*/
 	// creating the target line;
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {
 		// only draw half of the rays each frame

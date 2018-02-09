@@ -63,7 +63,7 @@ function initializeEntities() {
 		entities.all.push(point);
 	}
 	entities.points[0].spotlight = {
-		'narrowness': 150
+		'narrowness': 400
 	}
 	
 	for (var k = 0; k < 1; k++) {
