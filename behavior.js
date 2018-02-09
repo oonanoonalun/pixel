@@ -243,26 +243,28 @@ function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndice
 	return brightness;
 }
 
-function updateSpotlight(parent, centerTargetIndex, width, brightness) {
+function updateSpotlight(parent, centerTargetIndex, narrowness, brightness) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 	var arrayOfTargetIndices = [
 		centerTargetIndex,
 		centerTargetIndex - 1,
 		centerTargetIndex - 2,
+		centerTargetIndex - 3,
 		centerTargetIndex + 1,
 		centerTargetIndex + 2,
+		centerTargetIndex + 3,
 		centerTargetIndex - 1 * pixelsPerRow,
 		centerTargetIndex - 2 * pixelsPerRow,
+		centerTargetIndex - 3 * pixelsPerRow,
 		centerTargetIndex + 1 * pixelsPerRow,
 		centerTargetIndex + 2 * pixelsPerRow,
+		centerTargetIndex + 3 * pixelsPerRow
 	];
 	// creating the target line;
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {
 		// only draw half of the rays each frame
 		if (frameCounter % 2 === 0 && i % 2 === 0) continue;
 		if (frameCounter % 2 === 1 && i % 2 === 1) continue;
-		
-		//console.log(frameCounter, i);
 		
 		// WRONG, maybe. Maybe could compact some of these vars into fewer lines of code if they're not needed for anything other
 		//		than deriving a few key numbers.
@@ -315,6 +317,26 @@ function updateSpotlight(parent, centerTargetIndex, width, brightness) {
 				// applying lighting
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
 				pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+				// BROKEN doesn't really work. Trying to set the target indices at a fixed distance from the origin
+				/*if (
+					i === 0,
+					distanceFromIndexToIndex[currentIndex][centerTargetIndex] > narrowness - scaledPixelSize * 0.5 &&
+					distanceFromIndexToIndex[currentIndex][centerTargetIndex] < narrowness + scaledPixelSize * 0.5
+				) {
+					arrayOfTargetIndices[1] = currentIndex;
+					arrayOfTargetIndices[2] = currentIndex - 1;
+					arrayOfTargetIndices[3] = currentIndex - 2;
+					arrayOfTargetIndices[4] = currentIndex - 3;
+					arrayOfTargetIndices[5] = currentIndex + 1;
+					arrayOfTargetIndices[6] = currentIndex + 2;
+					arrayOfTargetIndices[7] = currentIndex + 3;
+					arrayOfTargetIndices[8] = currentIndex - 1 * pixelsPerRow;
+					arrayOfTargetIndices[9] = currentIndex - 2 * pixelsPerRow;
+					arrayOfTargetIndices[10] = currentIndex - 3 * pixelsPerRow;
+					arrayOfTargetIndices[11] = currentIndex + 1 * pixelsPerRow;
+					arrayOfTargetIndices[12] = currentIndex + 2 * pixelsPerRow;
+					arrayOfTargetIndices[13] = currentIndex + 3 * pixelsPerRow;
+				}*/
 			}
 
 			// incrementing for next loop
