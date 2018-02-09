@@ -82,7 +82,27 @@ var relativeMousePosition = (element) => {
 // end mouse
 //////////////////////////
 
-function pointZeroControls(acceleration) {
+function controls(acceleration, beamNarrowness) {
+	// 150 beamNarrowness is moderate 
+	// controlling spotlght direction with buttons
+	/*if (keysDown[KEY_E]) {
+		entities.points[1].childDisplacement.y = -150;
+		if (!keysDown[KEY_S] && !keysDown[KEY_F]) entities.points[1].childDisplacement.x = 0;
+	}
+	if (keysDown[KEY_D]) {
+		entities.points[1].childDisplacement.y = +150;
+		if (!keysDown[KEY_S] && !keysDown[KEY_F]) entities.points[1].childDisplacement.x = 0;
+	}
+	if (keysDown[KEY_S]) {
+		entities.points[1].childDisplacement.x = -150;
+		if (!keysDown[KEY_E] && !keysDown[KEY_D]) entities.points[1].childDisplacement.y = 0;
+	}
+	if (keysDown[KEY_F]) {
+		entities.points[1].childDisplacement.x = +150;
+		if (!keysDown[KEY_E] && !keysDown[KEY_D]) entities.points[1].childDisplacement.y = 0;
+	}*/
+	
+	// movement
 	// left handed
 	if (keysDown[KEY_E]) entities.points[0].dy -= acceleration;
 	if (keysDown[KEY_D]) entities.points[0].dy += acceleration;
@@ -94,5 +114,16 @@ function pointZeroControls(acceleration) {
 	if (keysDown[KEY_K]) entities.points[0].dy += acceleration;
 	if (keysDown[KEY_J]) entities.points[0].dx -= acceleration;
 	if (keysDown[KEY_L]) entities.points[0].dx += acceleration;
+	
+	// aim spotlight
+	var mag = distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index], // i.e. magnitude. made a var so  it doesn't get looked up twice
+		 nXMag = xDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag, // i.e. normalized x magnitude
+		 nYMag = yDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag;
+	entities.points[1].x = entities.points[0].x + beamNarrowness * nXMag;
+	entities.points[1].y = entities.points[0].y + beamNarrowness * nYMag;
+	
+	// change spotlight width
+	if (keysDown[KEY_R] || keysDown[KEY_U] && entities.points[0].spotlight.narrowness < 400) entities.points[0].spotlight.narrowness += 10;
+	if (keysDown[KEY_W] || keysDown[KEY_O] && entities.points[0].spotlight.narrowness > 110) entities.points[0].spotlight.narrowness -= 10;
 }
 

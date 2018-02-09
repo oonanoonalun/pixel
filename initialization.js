@@ -15,7 +15,6 @@ var canvas = $('canvas')[0],
 	},
 	frameCounter = 1;
 
-initializeEntities();
 initializeRGBAChannels();
 
 function initializeEntities() {
@@ -43,6 +42,7 @@ function initializeEntities() {
 		entities.lines.push(line);
 		entities.all.push(line);
 	}
+	
 	for (var j = 0; j < 2; j++) {
 		point = {
 			'x': Math.round(Math.random() * (canvas.width - 1)),
@@ -58,9 +58,14 @@ function initializeEntities() {
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
 			'shouldBeRemoved': false // WRONG: Doesn't need to be initialized. Same for lines.
 		};
+		point.index = indexOfCoordinates[point.x][point.y];
 		entities.points.push(point);
 		entities.all.push(point);
 	}
+	entities.points[0].spotlight = {
+		'narrowness': 150
+	}
+	
 	for (var k = 0; k < 1; k++) {
 		obstacle = {
 			'x': Math.round(Math.random() * (canvas.width - 1)),
@@ -77,16 +82,6 @@ function initializeEntities() {
 		entities.obstacles.push(obstacle);
 		entities.all.push(obstacle);
 	}
-	var spotlight = {
-		'lines': [],
-		'parent': entities.points[0],
-		'targetIndex': entities.points[1],
-		'brightness': 2048,
-		'width': 10,
-		'density': 5,
-		'isSoft': false
-	};
-	entities.points[0].spotlight = spotlight;
 }
 
 function initializeRGBAChannels() {

@@ -10,40 +10,21 @@ function mainLoop() {
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
     //      the entities are in two arrays (entities.lines/point and entitiies.all);
     //      Maybe ask Chris about this.
-    // WARNING: anything that happens before updateEntities() in the main loop might be missing information assigned intitially by the
-    //      first pass of udpateEntities() (i.e. entities.points[n].index);
+    controls(4, entities.points[0].spotlight.narrowness);
+    updateSpotlight(entities.points[0], entities.points[1].index, 2048);
     updateEntities(entities.all);
-    updateSpotlight(entities.points[0], entities.points[1].index, 150, 2048);
-    
-    /*castRay(
-        entities.points[0].index,
-        xDistanceFromIndexToIndex[entities.points[0].index][entities.points[1].index],
-        yDistanceFromIndexToIndex[entities.points[0].index][entities.points[1].index],
-        2048
-    );*/
-    
-    
-    //var lines = [buildLine(entities.points[0].index, entities.points[1].index, 1024)];
-    /*for (var j = 0; j < pixelsPerRow; j++) {
-        lines.push(buildLine(4759, j + 320, 10000));
-    }*/
-    // WRONG TEMP Just testing.
-    //rayTargetLineBuffer = [];
-    //entities.points[0].index = 4720;
-    //rayTargetLine = buildLine(entities.points[0].index, entities.points[1].index, 5120);
-    //var lines = buildLinesFromIndexToArrayOfIndices(55, rayTargetLine.body, 7680);
-    // scary point shadow
-    //if (frameCounter === 1) entities.points[0].brightness = -1768;
     
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     
     // mouse position is controlling entities.points[1]
-    entities.points[1].x = currentMousePosition.x;
-    entities.points[1].y = currentMousePosition.y;
+    //entities.points[1].x = currentMousePosition.x;
+    //entities.points[1].y = currentMousePosition.y;
+    
+    // scary point shadow
+    //if (frameCounter === 1) entities.points[0].brightness = -1768;
     
     // keyboard controls entities.points[0]
-    pointZeroControls(4);
     
     
     // entity autonomous movement
@@ -84,36 +65,6 @@ function mainLoop() {
         brightness += softPoints(i, [entities.points[0]]);
         //brightness += softLines(i, entities.lines);
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
-        
-        // raycasting work
-        //lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, true);
-        //brightness += linesFromIndexToArrayOfIndices(i, 4759, rayTargetLine.body, scaledPixelSize * 10, 1024, true);
-        
-        //brightness += obstacles(i, entities.obstacles);
-        
-        // working on a spotlight
-        // glowing spotlight beam
-        // DOESN'T REALLY WORK
-        /*for (var p = 0; p < entities.points[0].spotlight.lines[0].length; p++) {
-            brightness += (
-                entities.points[0].spotlight.brightness / 4 /
-                distanceFromIndexToIndex[entities.points[0].spotlight.lines[0][p]][i] // /
-                //(distanceFromIndexToIndex[entities.points[0].index][i] / 3)
-            );
-            //if (i === entities.points[0].spotlight.lines[0][p]) pixelArray[i * 4 + 0] -= 64;
-        }*/
-        
-        // drawing a raycasting spotlight
-        /*for (var k = 0; k < lines.length; k++) {
-            var line = lines[k];
-            for (var m = 0; m < line.body.length; m++) {
-                if (i === line.body[m]) brightness += (
-                    line.brightness / distanceFromIndexToIndex[line.startIndex][line.body[m]] +
-                    line.brightness / distanceFromIndexToIndex[line.startIndex][i]
-                );
-            }
-        }*/
-
 
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
@@ -126,21 +77,9 @@ function mainLoop() {
         // greyscale
         pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
         
-        
-        //drawing some stuff in color, after grescaling
-        
+        //drawing some stuff in color, after greyscaling
         // drawing entities.points[1]
         //if (i === entities.points[1].index) pixelArray[i * 4 + 1] = 255; 
-        
-        // drawing ray target line
-        /*for (var n = 0; n < rayTargetLine.body.length; n++) {
-            if (i === rayTargetLine.body[n]) {
-                //brightness += 2048;// / distanceFromIndexToIndex[i][rayTargetLine.body[n]];
-                pixelArray[i * 4 + 0] += 2048;
-                pixelArray[i * 4 + 1] = 0;
-                pixelArray[i * 4 + 2] = 0;
-            }
-        }*/
         
         // making ad hoc shadow-creating barrier red
         /*if (i > 2425 && i < 2455) {
@@ -160,6 +99,6 @@ function mainLoop() {
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
     context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
-    countFps(5, 30);    
+    //countFps(5, 30);    
     frameCounter++;
 }

@@ -21,6 +21,8 @@ initializeCoordinatesOfIndex();
 //initializeIndexNeighbors(); // WRONG: NOT DONE OR WORKING
 maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 
+initializeEntities(); // this has to happen after indexOfCoordinates[][] is initialized.
+
 // WRONG: too slow to process
 function initializeAllIndexToIndexDistances() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
