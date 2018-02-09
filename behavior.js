@@ -243,76 +243,119 @@ function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndice
 	return brightness;
 }
 
-function updateSpotlight(parent, targetIndex, brightness, width, density, isSoft) {
-	// WARNING/WRONG: .push() function calls!!!
-	// clear old spotlight lines
-	parent.spotlight.lines = [];
-	// NOTE: might want to make fewer beam lines than a full beam, then only draw 1/3 to 1/2 of them per frame, interlaced
-	var line = [],
-		xTravel = xDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize, // number of pixels/cells moved, total for line
-		yTravel = yDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize,
-		absXTravel = absXDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize, // absolute value of pixels/cells moved, total for line
-		absYTravel = absYDistanceFromIndexToIndex[parent.index][targetIndex] / scaledPixelSize,
-		minAxisPolarity = 1,
-		maxAxisPolarity = 1,
-		comma = 0, // used to keep track of fractional remainders from "absXTravel / (absYTravel + 1)." Borrowing a term from musical scale construction
-		target = targetIndex,
-		//targetIndices = [targetIndex, 4799, 4759, 4720, 2400, 2479],
-		currentIndex = parent.index;
-	// build the line's body
-	// WRONG, probably. It would be great not to repeat this code depending on whether x or y is bigger
-	if (absXDistanceFromIndexToIndex[parent.index][target] >= absYDistanceFromIndexToIndex[parent.index][target]) {
-		if (yTravel < 0) minAxisPolarity = -1;
-		if (xTravel < 0) maxAxisPolarity = -1;
-		comma = absXTravel / absYTravel % 1;
-		for (var k = 0; k < absYTravel; k++) {
+function updateSpotlight(parent, targetIndex, brightness, widthScale) {
+	// NOTE: This function heavily duplicates contents from the castRay() function.
+	var xMag = xDistanceFromIndexToIndex[parent.index][targetIndex],
+		yMag = yDistanceFromIndexToIndex[parent.index][targetIndex],
+		nXMag, //normalizedXMag
+		nYMag,
+		absXMag = xMag,
+		absYMag = yMag,
+		mag;
+	if (absXMag < 0) absXMag = -absXMag;
+	if (absYMag < 0) absYMag = -absYMag;
+	mag = absXMag + absYMag;
+	nXMag = xMag / mag;
+	nYMag = yMag / mag;
+	xStep = xMag / mag * scaledPixelSize;
+	yStep = yMag / mag * scaledPixelSize;
+	for (var i = -4; i <= 4; i++) {
+		// each loop here draws one ray
+		var currentIndex = parent.index,
+			currentCoords = {
+				'x': coordinatesOfIndex[currentIndex].x,
+				'y': coordinatesOfIndex[currentIndex].y
+			},
+			collided = false,
+			roundedX = currentCoords.x,
+			roundedY = currentCoords.y;
+		while (
+			currentIndex < pixelsPerGrid && currentIndex >= 0 &&
+			currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&
+			currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
+			!collided
+		) {
+			// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+			roundedX = currentCoords.x;
+			roundedY = currentCoords.y;
+			if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+			if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+			if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+			if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+			if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+			if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+	
+			// checking for collisions
 			if (currentIndex > 2425 && currentIndex < 2455) {
 				pixelArray[currentIndex * 4 + 0] += 127;
-				break; // ad hoc shadow-creating barrier
+				collided = true; // ad hoc shadow-creating barrier
 			} else {
-				var nextXTravel = absXDistanceFromIndexToIndex[currentIndex][target] / absYDistanceFromIndexToIndex[currentIndex][target] - comma;
-				if (currentIndex > 2425 && currentIndex < 2455) {
-					pixelArray[currentIndex * 4 + 0] += 127;
-					break; // ad hoc shadow-creating barrier
-				} else {
-					for (var i = 0; i < nextXTravel; i++) {
-						line.push(
-							currentIndex
-						);
-						pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
-						currentIndex += maxAxisPolarity;
-					}
-					currentIndex += minAxisPolarity * pixelsPerRow;
-				}
+				// applying lighting
+				// WARNING: haven't checked what this currentIndex assignment is doing, and if it's in the right place
+				currentIndex = indexOfCoordinates[roundedX][roundedY];
+				pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[parent.index][currentIndex];
 			}
-		}
-	} else {
-		if (xTravel < 0) minAxisPolarity = -1;
-		if (yTravel < 0) maxAxisPolarity = -1;
-		comma = absYTravel / absXTravel % 1;
-		for (var j = 0; j < absXTravel; j++) {
-			var nextYTravel = absYDistanceFromIndexToIndex[currentIndex][target] / absXDistanceFromIndexToIndex[currentIndex][target] - comma;
-			if (currentIndex > 2425 && currentIndex < 2455) {
-					pixelArray[currentIndex * 4 + 0] += 127;
-					break; // ad hoc shadow-creating barrier
-			} else {
-				for (var m = 0; m < nextYTravel; m++) {
-					if (currentIndex > 2425 && currentIndex < 2455) {
-						pixelArray[currentIndex * 4 + 0] += 127;
-						break; // ad hoc shadow-creating barrier
-					} else {
-						line.push( // maybe unnecessary
-							currentIndex
-						);
-						pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
-						currentIndex += maxAxisPolarity * pixelsPerRow;
-					}
-				}
-				currentIndex += minAxisPolarity;
-			}
+			
+			// incrementing for next loop
+			currentCoords.x += xStep + i * widthScale; // the 'i * widthScale' is for creating a spread of rays. It doesn't affect the central ray.
+			currentCoords.y += yStep + i * widthScale;
 		}
 	}
-	parent.spotlight.lines.push(line); // maybe unnecessary
+}
+
+function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
+	var currentIndex = originIndex,
+		currentCoords = {
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		collided = false,
+		xStep,
+		yStep,
+		mag,
+		absXMag = xMagnitude,
+		absYMag = yMagnitude,
+		roundedX = currentCoords.x,
+		roundedY = currentCoords.y;
+	if (absXMag < 0) absXMag = -absXMag;
+	if (absYMag < 0) absYMag = -absYMag;
+	mag = absXMag + absYMag;
+	// NOTE: 'xStep' and 'yStep' are the only things used in the actual drawing steps,
+	//		so any shared calculations could only be done once, and just xStep and yStep
+	//		could be sent to the castRay() function, or to whatever block of code draws rays.
+	xStep = xMagnitude / mag * scaledPixelSize;
+	yStep = yMagnitude / mag * scaledPixelSize;
+	while (
+		currentIndex < pixelsPerGrid && currentIndex >= 0 &&
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&
+		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
+		!collided
+	) {
+		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+		roundedX = currentCoords.x;
+		roundedY = currentCoords.y;
+		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+
+		// checking for collisions
+		if (currentIndex > 2425 && currentIndex < 2455) {
+			pixelArray[currentIndex * 4 + 0] += 127;
+			collided = true; // ad hoc shadow-creating barrier
+		} else {
+			// applying lighting
+			// WARNING: haven't checked what this currentIndex assignment is doing, and if it's in the right place
+			currentIndex = indexOfCoordinates[roundedX][roundedY];
+			pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[originIndex][currentIndex];
+		}
+		
+		// incrementing for next loop
+		currentCoords.x += xStep;
+		currentCoords.y += yStep;
+	}
 }
 
 function softLines(currentIndex, entitiesArray) {
@@ -353,59 +396,6 @@ function softPoints(currentIndex, entitiesArray) {
 	}
 	//if (pixelArray[currentIndex * 4 + 0] < brightness) pixelArray[currentIndex * 4 + 0] += brightness / 20;
 	return brightness;
-}
-
-function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
-	// build the line's body
-	var currentIndex = originIndex,
-		currentCoords = {
-			'x': coordinatesOfIndex[currentIndex].x,
-			'y': coordinatesOfIndex[currentIndex].y
-		},
-		collided = false,
-		xStep,
-		yStep,
-		mag,
-		absXMag = xMagnitude,
-		absYMag = yMagnitude,
-		roundedX = currentCoords.x,
-		roundedY = currentCoords.y;
-	if (absXMag < 0) absXMag = -absXMag;
-	if (absYMag < 0) absYMag = -absYMag;
-	mag = absXMag + absYMag;
-	xStep = xMagnitude / mag * scaledPixelSize;
-	yStep = yMagnitude / mag * scaledPixelSize;
-	while (
-		currentIndex < pixelsPerGrid && currentIndex >= 0 &&
-		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&
-		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
-		!collided
-	) {
-		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
-		roundedX = currentCoords.x;
-		roundedY = currentCoords.y;
-		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
-		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
-		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
-		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
-		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
-		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
-
-		// checking for collisions
-		if (currentIndex > 2425 && currentIndex < 2455) {
-			pixelArray[currentIndex * 4 + 0] += 127;
-			collided = true; // ad hoc shadow-creating barrier
-		} else {
-			// applying lighting
-			// WARNING: haven't checked what this currentIndex assignment is doing, and if it's in the right place
-			currentIndex = indexOfCoordinates[roundedX][roundedY];
-			pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[originIndex][currentIndex];
-		}
-		
-		// incrementing for next loop
-		currentCoords.x += xStep;
-		currentCoords.y += yStep;
-	}
 }
 
 function updateEntities(entityArray) {

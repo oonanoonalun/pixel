@@ -13,13 +13,13 @@ function mainLoop() {
     // WARNING: anything that happens before updateEntities() in the main loop might be missing information assigned intitially by the
     //      first pass of udpateEntities() (i.e. entities.points[n].index);
     updateEntities(entities.all);
-    //updateSpotlight(entities.points[0], entities.points[1].index, 2048, 5, 5, false);
-    castRay(
+    updateSpotlight(entities.points[0], entities.points[1].index, 2048, 0.3);
+    /*castRay(
         entities.points[0].index,
         xDistanceFromIndexToIndex[entities.points[0].index][entities.points[1].index],
         yDistanceFromIndexToIndex[entities.points[0].index][entities.points[1].index],
         2048
-    );
+    );*/
     
     
     //var lines = [buildLine(entities.points[0].index, entities.points[1].index, 1024)];
