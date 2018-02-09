@@ -245,6 +245,8 @@ function linesFromIndexToArrayOfIndices(currentIndex, originIndex, arrayOfIndice
 
 function updateSpotlight(parent, targetIndex, brightness, widthScale) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
+	// WRONG, maybe. Maybe could compact some of these vars into fewer lines of code if they're not needed for anything other
+	//		than deriving a few key numbers.
 	var xMag = xDistanceFromIndexToIndex[parent.index][targetIndex],
 		yMag = yDistanceFromIndexToIndex[parent.index][targetIndex],
 		nXMag, //normalizedXMag
@@ -260,6 +262,9 @@ function updateSpotlight(parent, targetIndex, brightness, widthScale) {
 	xStep = xMag / mag * scaledPixelSize;
 	yStep = yMag / mag * scaledPixelSize;
 	for (var i = -4; i <= 4; i++) {
+		// WRONG this is drawing nine rays right on top of each other
+		// WRONG: When this gets working, there should be twice as many rays, and half of them should draw every other frame.
+		//		This could just check whether frameCounter %  2 === 0. It could also be more beams with subsets drawn every three frames.
 		// each loop here draws one ray
 		var currentIndex = parent.index,
 			currentCoords = {
@@ -291,14 +296,53 @@ function updateSpotlight(parent, targetIndex, brightness, widthScale) {
 				collided = true; // ad hoc shadow-creating barrier
 			} else {
 				// applying lighting
-				// WARNING: haven't checked what this currentIndex assignment is doing, and if it's in the right place
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
 				pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[parent.index][currentIndex];
 			}
-			
+
 			// incrementing for next loop
-			currentCoords.x += xStep + i * widthScale; // the 'i * widthScale' is for creating a spread of rays. It doesn't affect the central ray.
-			currentCoords.y += yStep + i * widthScale;
+			// NOTE: 'i' is going from positive to negative, with its 0 state drawing the central ray in the beam
+			currentCoords.x += xStep;
+			currentCoords.y += yStep;
+			
+			
+			// NOTE: All this crap (below) is just trying to get the side-rays to draw in a nice, even spread with minimal code
+			
+			// Good up-down-left-right, up-right and down left diagonals too broad, down-right and up-left diagonals are too narrow
+			// this version looks good in the four cardinal direction, but is too narrow up-left and down-right, and too broad up-right and down-left
+			/*currentCoords.x += xStep + i * widthScale; // the 'i * widthScale' is for creating a spread of rays. It doesn't affect the central ray.
+			currentCoords.y += yStep + i * widthScale;*/
+			
+			// Same for this one:
+			//currentCoords.x += xStep + i * 1.5 * nYMag * nYMag;
+			//currentCoords.y += yStep + i * 1.5 * nXMag * nXMag;
+			
+			// Good orthogonals. Diagonals narrow.
+			// When xStep and yStep are at their most different (i.e. orthogonals), this is good, but
+			//		when they are the same (i.e. diagonals), it's bad.
+			// It seems like this might be
+			//		a step in the right direction because it's symmetrical.
+			/*currentCoords.x += xStep + i * 1.5 * nYMag;
+			currentCoords.y += yStep + i * 1.5 * nXMag;*/
+
+			// Good left and right. Up and down narrow.
+			/*currentCoords.x += xStep + i * nYMag * nXMag;
+			currentCoords.y += yStep + i * nXMag * nXMag;*/ // NOTE: accidentally, this is nXMag * nXMag, wheras above it's nYMag * nXMag
+			
+			// Good up and down. Left and right narrow.
+			/*currentCoords.x += xStep + i * (nYMag - nXMag);
+			currentCoords.y += yStep + i * (nXMag - nXMag);*/ // NOTE: accidentally, this is nXMag - nXMag, which is just 0.
+			
+			// Orthogonals good. Diagonals narrow. (There are simpler ways to achieve this effect.)
+			/*currentCoords.x += xStep + i * (nXMag - nYMag);
+			currentCoords.y += yStep + i * (nYMag - nXMag);*/
+			
+			// Orthogonals good. Diagonals narrow. (There are simple ways to achieve this effect.)
+			/*currentCoords.x += xStep + i * (nYMag - nXMag);
+			currentCoords.y += yStep + i * (nXMag - nYMag);*/
+			
+			
+			
 		}
 	}
 }
@@ -320,9 +364,6 @@ function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
 	if (absXMag < 0) absXMag = -absXMag;
 	if (absYMag < 0) absYMag = -absYMag;
 	mag = absXMag + absYMag;
-	// NOTE: 'xStep' and 'yStep' are the only things used in the actual drawing steps,
-	//		so any shared calculations could only be done once, and just xStep and yStep
-	//		could be sent to the castRay() function, or to whatever block of code draws rays.
 	xStep = xMagnitude / mag * scaledPixelSize;
 	yStep = yMagnitude / mag * scaledPixelSize;
 	while (
@@ -347,7 +388,6 @@ function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
 			collided = true; // ad hoc shadow-creating barrier
 		} else {
 			// applying lighting
-			// WARNING: haven't checked what this currentIndex assignment is doing, and if it's in the right place
 			currentIndex = indexOfCoordinates[roundedX][roundedY];
 			pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[originIndex][currentIndex];
 		}
