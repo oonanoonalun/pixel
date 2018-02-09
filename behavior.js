@@ -71,7 +71,20 @@ function updateSpotlight(parent, centerTargetIndex, brightness) {
 		centerTargetIndex - 3 * pixelsPerRow,
 		centerTargetIndex + 1 * pixelsPerRow,
 		centerTargetIndex + 2 * pixelsPerRow,
-		centerTargetIndex + 3 * pixelsPerRow
+		centerTargetIndex + 3 * pixelsPerRow,
+		// denser:
+		centerTargetIndex - 1 * pixelsPerRow - 1,
+		centerTargetIndex - 2 * pixelsPerRow - 1,
+		centerTargetIndex - 3 * pixelsPerRow - 1,
+		centerTargetIndex + 1 * pixelsPerRow + 1,
+		centerTargetIndex + 2 * pixelsPerRow + 1,
+		centerTargetIndex + 3 * pixelsPerRow + 1,
+		centerTargetIndex - 1 * pixelsPerRow + 1,
+		centerTargetIndex - 2 * pixelsPerRow + 1,
+		centerTargetIndex - 3 * pixelsPerRow + 1,
+		centerTargetIndex + 1 * pixelsPerRow - 1,
+		centerTargetIndex + 2 * pixelsPerRow - 1,
+		centerTargetIndex + 3 * pixelsPerRow - 1,
 	];
 	// creating the target line;
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {

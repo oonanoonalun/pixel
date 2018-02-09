@@ -2,11 +2,8 @@ var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
 
-// WRONG TEMP JUST FOR TESTING
-var rayTargetLine = [];
-
 function mainLoop() {
-    // updating entity position, speed, acceleration, and nearest index
+    // updating entity position, speed, acceleration, nearest index, and child positions
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
     //      the entities are in two arrays (entities.lines/point and entitiies.all);
     //      Maybe ask Chris about this.
@@ -65,7 +62,7 @@ function mainLoop() {
         brightness += softPoints(i, [entities.points[0]]);
         //brightness += softLines(i, entities.lines);
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
-
+        
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         
