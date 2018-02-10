@@ -129,8 +129,8 @@ function controls(acceleration, beamNarrowness, controlSpotlight) {
 		
 		
 		// change spotlight width
-		if ((keysDown[KEY_R] || keysDown[KEY_U]) && entities.points[0].spotlight.narrowness < 8) entities.points[0].spotlight.narrowness += 1;
-		if ((keysDown[KEY_W] || keysDown[KEY_O]) && entities.points[0].spotlight.narrowness > 2) entities.points[0].spotlight.narrowness -= 1;
+		if ((keysDown[KEY_R] || keysDown[KEY_U]) && entities.points[0].spotlight.narrowness < 8) entities.points[0].spotlight.narrowness += 0.25;
+		if ((keysDown[KEY_W] || keysDown[KEY_O]) && entities.points[0].spotlight.narrowness > 2) entities.points[0].spotlight.narrowness -= 0.5;
 	} else { // spotlight controlled by player vx and vy
 		var targetIndex = castTargetVector(entities.points[0].index, entities.points[0].vx * 100, entities.points[0].vy * 100, 50, 400);
 		entities.points[1].x = coordinatesOfIndex[targetIndex].x;

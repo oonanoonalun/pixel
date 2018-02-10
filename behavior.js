@@ -57,14 +57,13 @@ function wandering(entity, accelerationScale) {
 }
 
 // WRONG, maybe. I think this should just be called "castSpotlight()," since I don't think it relies on any external object that it's updating.
-function updateSpotlight(parent, targetIndex, brightness) {
+function updateSpotlight(parent, targetIndex) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 
 	var arrayOfTargetIndices = findSpotlightTargets(parent.index, targetIndex, parent.spotlight.narrowness);
 
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {
 		// only draw half of the rays each frame
-		// NOTE: could maybe do this even more broken up if the target density is high?
 		if (frameCounter % 2 === 0 && i % 2 === 0) continue;
 		if (frameCounter % 2 === 1 && i % 2 === 1) continue;
 		
@@ -114,6 +113,7 @@ function updateSpotlight(parent, targetIndex, brightness) {
 
 function findSpotlightTargets(originIndex, targetIndex, narrowness) {
 	var targetIndices = [];
+	var i = 0; // index counter
 	var beamCenterTargetIndex = castRayToPerimeter(
             originIndex,
             xDistanceFromIndexToIndex[originIndex][targetIndex],
@@ -125,7 +125,8 @@ function findSpotlightTargets(originIndex, targetIndex, narrowness) {
             distanceFromIndexToIndex[perimIndex][beamCenterTargetIndex] <
             distanceFromIndexToIndex[beamCenterTargetIndex][originIndex] / narrowness
         ) {
-            targetIndices.push(perimIndex);
+            targetIndices[i] = perimIndex;
+			i++;
         }
     }
 	return targetIndices;

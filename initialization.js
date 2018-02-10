@@ -44,7 +44,7 @@ function initializeEntities() {
 	}
 	entities.points[0].spotlight = {
 		'brightness': 2048,
-		'narrowness': 5
+		'narrowness': 3.75
 	};
 	entities.points[1].noCollision = true;
 	entities.points[2].noCollision = true; // WRONG this is weird. Think about how to deal with obstacle-obstacle collision. If this isn't true, the object collides with the solid things built around it if all the blocks around it are built as solid.
