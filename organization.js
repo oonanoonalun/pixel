@@ -44,7 +44,7 @@ function initializePerimeterIndices() {
 }
 
 function initializeNeighborsOfIndex() {
-	var neighborRadius = 2; // any cell within this radius (in cells) will be considered a neighbor
+	var neighborRadius = 1; // any cell within this radius (in cells) will be considered a neighbor
 	for (var i = 0; i < pixelsPerGrid; i++) {
 		neighborsOfIndex.push([]);
 		for (var j = 0; j < pixelsPerGrid; j++) {

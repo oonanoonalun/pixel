@@ -57,7 +57,7 @@ function wandering(entity, accelerationScale) {
 }
 
 // WRONG, maybe. I think this should just be called "castSpotlight()," since I don't think it relies on any external object that it's updating.
-function castSpotlight(parent, targetIndex) {
+function castSpotlight(parent, targetIndex, isSoft) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 
 	var arrayOfTargetIndices = findSpotlightTargets(parent.index, targetIndex, parent.spotlight.narrowness);
@@ -97,13 +97,20 @@ function castSpotlight(parent, targetIndex) {
 			// checking for collisions
 			if (propertiesOfIndex[currentIndex].solid) {
 				pixelArray[currentIndex * 4 + 0] += 127;
+				if (isSoft) {
+					for (var k = 0; k < neighborsOfIndex[currentIndex].length; k++) {
+						pixelArray[neighborsOfIndex[currentIndex][k] * 4 + 0] += 32;
+					}
+				}
 				collided = true;
 			} else {
 				// applying lighting
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
 				pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
-				for (var j = 0; j < neighborsOfIndex[currentIndex].length; j++) {
-					pixelArray[neighborsOfIndex[currentIndex][j] * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+				if (isSoft) {
+					for (var j = 0; j < neighborsOfIndex[currentIndex].length; j++) {
+						pixelArray[neighborsOfIndex[currentIndex][j] * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+					}
 				}
 			}
 

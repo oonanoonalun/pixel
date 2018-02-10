@@ -16,7 +16,7 @@ function mainLoop() {
     controls(4, entities.points[0].spotlight.narrowness, true);
     
     // player spotlight
-    castSpotlight(entities.points[0], entities.points[1].index);
+    castSpotlight(entities.points[0], entities.points[1].index, true);
     
     // updating entity position, speed, acceleration, nearest index, and child positions
     updateEntities(entities.all);   
@@ -60,13 +60,14 @@ function mainLoop() {
     );*/
     //wandering(entities.points[0], 1);
     
-    // looping through each pixel
+    // looping over each pixel
     for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
  
         // add noise
-        //pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
+        // WARNING: Remember that this is an extra 4800 function calls (Math.random()) per frame.
+        //pixelArray[i * 4 + 0] += Math.random() * 8 - 4;
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
@@ -101,7 +102,6 @@ function mainLoop() {
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
         
         // blend
-        // WRONG? Not sure if this is really doing anything at all
         var neighborsBrightness = 0;
         for (var k = 0; k < neighborsOfIndex[i].length; k ++) {
             neighborsBrightness += pixelArray[neighborsOfIndex[i][k] * 4 + 0];
@@ -112,7 +112,7 @@ function mainLoop() {
         
         // brightness decay
         // WRONG, maybe. The logarithmic decay might not look as good as the linear one.
-        pixelArray[i * 4 + 0] *= 0.75;//-= 3; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic
+        pixelArray[i * 4 + 0] *= 0.92; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic, 0.75 is ok for something steeper.
         //pixelArray[i * 4 + 1] *= 0.88;
         //if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.88;
         //if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
