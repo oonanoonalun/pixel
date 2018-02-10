@@ -5,43 +5,51 @@ var distanceFromIndexToIndex = [],
 	absYDistanceFromIndexToIndex = [],
 	coordinatesOfIndex = [],
 	indexOfCoordinates = [],
-	//allIndexToIndexDistances = [], // WRONG: Too slow to process. index-to-index distances
 	neighborsOfIndex = [],
+	propertiesOfIndex = [],
 	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow,
 	maxScreenDistance;
 
-initializeXDistancesFromIndexToIndex();
-initializeAbsXDistancesFromIndexToIndex();
-initializeYDistancesFromIndexToIndex();
-initializeAbsYDistancesFromIndexToIndex();
-initializeDistancesFromIndexToIndex();
-//initializeAllIndexToIndexDistances(); // WRONG: too slow to process
-initializeIndexOfCoordinates();
-initializeCoordinatesOfIndex();
+initializeDistanceLookupTables();
+initializeCoordinatesLookupTables();
 initializeNeighborsOfIndex();
+
 maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 
 initializeEntities(); // this has to happen after indexOfCoordinates[][] is initialized.
 
-// WRONG: too slow to process
-function initializeAllIndexToIndexDistances() {
+initializePropertiesOfIndex(); // this might not need to happen after initializeEntities(), but it might be convenient to
+
+function initializeNeighborsOfIndex() {
+	var neighborRadius = 8; // any cell within this radius will be considered a neighbor
 	for (var i = 0; i < pixelsPerGrid; i++) {
-		allIndexToIndexDistances.push([]);
-		console.log(i);
+		neighborsOfIndex.push([]);
 		for (var j = 0; j < pixelsPerGrid; j++) {
-			allIndexToIndexDistances[i].push(
-				{
-					'x': xDistanceFromIndexToIndex[i][j],
-					'absx': xDistanceFromIndexToIndex[i][j], // absolute value of x distance
-					'y': yDistanceFromIndexToIndex[i][j],
-					'absy': yDistanceFromIndexToIndex[i][j],
-					'd': distanceFromIndexToIndex[i][j]
-				}
-			);
-			if (allIndexToIndexDistances[i][j].absx < 0) allIndexToIndexDistances[i][j].absx = -allIndexToIndexDistances[i][j].absx;
-			if (allIndexToIndexDistances[i][j].absy < 0) allIndexToIndexDistances[i][j].absy = -allIndexToIndexDistances[i][j].absy;
+			if (distanceFromIndexToIndex[i][j] < scaledPixelSize * (neighborRadius + 0.4)) neighborsOfIndex[i].push(j);
 		}
 	}
+}
+
+function initializePropertiesOfIndex() {
+	for (var i = 0; i < pixelsPerGrid; i++) {
+		if (i > 2425 && i < 2455) {
+			propertiesOfIndex.push({
+				'solid': true
+			});
+		} else {
+			propertiesOfIndex.push({
+				'solid': false
+			});
+		}
+	}
+}
+
+//////////////////////////////////////////////
+// coordinates lookup tables inititalization
+
+function initializeCoordinatesLookupTables() {
+	initializeIndexOfCoordinates();
+	initializeCoordinatesOfIndex();
 }
 
 function initializeCoordinatesOfIndex() {
@@ -68,11 +76,30 @@ function initializeIndexOfCoordinates() {
 	}
 }
 
-function initializeNeighborsOfIndex() {
+// end coordinates lookup tables initialization
+//////////////////
+
+//////////////////
+// distance lookup tables initialization
+
+function initializeDistanceLookupTables() {
+	initializeXDistancesFromIndexToIndex();
+	initializeAbsXDistancesFromIndexToIndex();
+	initializeYDistancesFromIndexToIndex();
+	initializeAbsYDistancesFromIndexToIndex();
+	initializeDistancesFromIndexToIndex();
+}
+
+function initializeDistancesFromIndexToIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
-		neighborsOfIndex.push([]);
+		distanceFromIndexToIndex.push([]);
 		for (var j = 0; j < pixelsPerGrid; j++) {
-			if (distanceFromIndexToIndex[i][j] < scaledPixelSize * 8.4) neighborsOfIndex[i].push(j);
+			distanceFromIndexToIndex[i].push(
+				Math.sqrt(
+				    xDistanceFromIndexToIndex[i][j] * xDistanceFromIndexToIndex[i][j] +
+					yDistanceFromIndexToIndex[i][j] * yDistanceFromIndexToIndex[i][j]
+				)
+			);
 		}
 	}
 }
@@ -121,16 +148,5 @@ function initializeAbsYDistancesFromIndexToIndex() {
 	}
 }
 
-function initializeDistancesFromIndexToIndex() {
-	for (var i = 0; i < pixelsPerGrid; i++) {
-		distanceFromIndexToIndex.push([]);
-		for (var j = 0; j < pixelsPerGrid; j++) {
-			distanceFromIndexToIndex[i].push(
-				Math.sqrt(
-				    xDistanceFromIndexToIndex[i][j] * xDistanceFromIndexToIndex[i][j] +
-					yDistanceFromIndexToIndex[i][j] * yDistanceFromIndexToIndex[i][j]
-				)
-			);
-		}
-	}
-}
+// end distance lookup tables initialization
+////////////////////////

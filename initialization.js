@@ -38,6 +38,7 @@ function initializeEntities() {
 			'type': 'line',
 			'shouldBeRemoved': false
 		};
+		line.index = indexOfCoordinates[line.x][line.y];
 		// WRONG: I don't want to have to filter two arrays for removing one item
 		entities.lines.push(line);
 		entities.all.push(line);
@@ -79,6 +80,7 @@ function initializeEntities() {
 			'radius': 35,
 			'type': 'obstacle'
 		};
+		obstacle.index = indexOfCoordinates[obstacle.x][obstacle.y];
 		entities.obstacles.push(obstacle);
 		entities.all.push(obstacle);
 	}

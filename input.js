@@ -82,7 +82,7 @@ var relativeMousePosition = (element) => {
 // end mouse
 //////////////////////////
 
-function controls(acceleration, beamNarrowness) {
+function controls(acceleration, beamNarrowness, controlSpotlight) {
 	// 150 beamNarrowness is moderate 
 	// controlling spotlght direction with buttons
 	/*if (keysDown[KEY_E]) {
@@ -115,15 +115,22 @@ function controls(acceleration, beamNarrowness) {
 	if (keysDown[KEY_J]) entities.points[0].dx -= acceleration;
 	if (keysDown[KEY_L]) entities.points[0].dx += acceleration;
 	
-	// aim spotlight
-	var mag = distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index], // i.e. magnitude. made a var so  it doesn't get looked up twice
-		 nXMag = xDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag, // i.e. normalized x magnitude
-		 nYMag = yDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag;
-	entities.points[1].x = entities.points[0].x + beamNarrowness * nXMag;
-	entities.points[1].y = entities.points[0].y + beamNarrowness * nYMag;
-	
-	// change spotlight width
-	if (keysDown[KEY_R] || keysDown[KEY_U] && entities.points[0].spotlight.narrowness < 400) entities.points[0].spotlight.narrowness += 10;
-	if (keysDown[KEY_W] || keysDown[KEY_O] && entities.points[0].spotlight.narrowness > 110) entities.points[0].spotlight.narrowness -= 10;
+	// spotlight control
+	if (controlSpotlight) {
+		// mouse aims spotlight
+		var mag = distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index], // i.e. magnitude. made a var so  it doesn't get looked up twice
+			 nXMag = xDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag, // i.e. normalized x magnitude
+			 nYMag = yDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag;
+		entities.points[1].x = entities.points[0].x + beamNarrowness * nXMag;
+		entities.points[1].y = entities.points[0].y + beamNarrowness * nYMag;
+		
+		// change spotlight width
+		if (keysDown[KEY_R] || keysDown[KEY_U] && entities.points[0].spotlight.narrowness < 400) entities.points[0].spotlight.narrowness += 10;
+		if (keysDown[KEY_W] || keysDown[KEY_O] && entities.points[0].spotlight.narrowness > 110) entities.points[0].spotlight.narrowness -= 10;
+	} else { // spotlight controlled by player vx and vy
+		var targetIndex = castTargetVector(entities.points[0].index, entities.points[0].vx * 100, entities.points[0].vy * 100, 50, 400);
+		entities.points[1].x = coordinatesOfIndex[targetIndex].x;
+		entities.points[1].y = coordinatesOfIndex[targetIndex].y;
+	}
 }
 

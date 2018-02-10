@@ -2,23 +2,26 @@ var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
 
-// WRONG just testing
+// WRONG just testing. Sort of not wrong, but shouldn't be a global var. Should be an array on the spotlight attached to an origin entity.
 var beamTargets = [entities.points[1].index];
 
 function mainLoop() {
-    // updating entity position, speed, acceleration, nearest index, and child positions
+    // updating mouse position
+    currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
     //      the entities are in two arrays (entities.lines/point and entitiies.all);
     //      Maybe ask Chris about this.
-    controls(4, entities.points[0].spotlight.narrowness);
+    
+    controls(4, entities.points[0].spotlight.narrowness, false);
+    
     updateSpotlight(entities.points[0], /*entities.points[1].index*/ beamTargets, 384);
+    
+    // updating entity position, speed, acceleration, nearest index, and child positions
     updateEntities(entities.all);
     
     //WRONG Just testing
     beamTargets = [];
     
-    // updating mouse position
-    currentMousePosition = relativeMousePosition(canvas);
     
     // mouse position is controlling entities.points[1]
     //entities.points[1].x = currentMousePosition.x;
@@ -59,7 +62,7 @@ function mainLoop() {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
         
-        // WRONG just testing
+        // WRONG just testing... Sort of not just testing.
         if (distanceFromIndexToIndex[i][entities.points[1].index] < 100) {
             beamTargets.push(i);
         }
@@ -86,8 +89,9 @@ function mainLoop() {
         brightness += neighborsBrightness;
         
         // brightness decay
+        // WRONG, maybe. The logarithmic decay might not look as good as the linear one.
         pixelArray[i * 4 + 0] *= 0.88;//-= 3; // -= 3 is a nice decay rate for a solid afterimage
-        //pixelArray[i * 4 + 1] -= 3;
+        pixelArray[i * 4 + 1] *= 0.88;
         //pixelArray[i * 4 + 2] -= 2;
         
         // greyscale
@@ -96,13 +100,6 @@ function mainLoop() {
         //drawing some stuff in color, after greyscaling
         // drawing entities.points[1]
         //if (i === entities.points[1].index) pixelArray[i * 4 + 1] = 255; 
-        
-        // making ad hoc shadow-creating barrier red
-        /*if (i > 2425 && i < 2455) {
-            pixelArray[i * 4 + 0] += 255;
-            pixelArray[i * 4 + 1] = 0;
-            pixelArray[i * 4 + 2] = 0;
-        }*/
         
         // equalize
         //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 1;
@@ -115,6 +112,6 @@ function mainLoop() {
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
     context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
-    //countFps(5, 30);    
+    countFps(5, 30);    
     frameCounter++;
 }

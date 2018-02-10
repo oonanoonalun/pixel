@@ -56,6 +56,7 @@ function wandering(entity, accelerationScale) {
 	entity.dy += yDistance / magnitude * accelerationScale;
 }
 
+// WRONG, maybe. I think this should just be called "castSpotlight()," since I don't think it relies on any external object that it's updating.
 function updateSpotlight(parent, targetsArray, brightness) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 	// WRONG just testing
@@ -89,9 +90,10 @@ function updateSpotlight(parent, targetsArray, brightness) {
 		centerTargetIndex + 2 * pixelsPerRow - 1,
 		centerTargetIndex + 3 * pixelsPerRow - 1,
 	];*/
-	// creating the target line;
+	// creating the beam rays
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {
 		// only draw half of the rays each frame
+		// NOTE: could maybe do this even more broken up if the target density is high?
 		if (frameCounter % 2 === 0 && i % 2 === 0) continue;
 		if (frameCounter % 2 === 1 && i % 2 === 1) continue;
 		
@@ -100,7 +102,7 @@ function updateSpotlight(parent, targetsArray, brightness) {
 			xStep = xDistanceFromIndexToIndex[parent.index][arrayOfTargetIndices[i]] / mag * scaledPixelSize,
 			yStep = yDistanceFromIndexToIndex[parent.index][arrayOfTargetIndices[i]] /	mag * scaledPixelSize,
 			currentIndex = parent.index,
-			currentCoords = {
+			currentCoords = { // WRONG, sort of: I have no idea why I'm not being able to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
 				'x': coordinatesOfIndex[currentIndex].x,
 				'y': coordinatesOfIndex[currentIndex].y
 			},
@@ -108,8 +110,7 @@ function updateSpotlight(parent, targetsArray, brightness) {
 			roundedX = currentCoords.x,
 			roundedY = currentCoords.y;
 		while (
-			currentIndex < pixelsPerGrid && currentIndex >= 0 &&
-			currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&
+			currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 			currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
 			!collided
 		) {
@@ -124,9 +125,9 @@ function updateSpotlight(parent, targetsArray, brightness) {
 			if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
 	
 			// checking for collisions
-			if (currentIndex > 2425 && currentIndex < 2455) {
+			if (propertiesOfIndex[currentIndex].solid) {
 				pixelArray[currentIndex * 4 + 0] += 127;
-				collided = true; // ad hoc shadow-creating barrier
+				collided = true;
 			} else {
 				// applying lighting
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
@@ -141,6 +142,7 @@ function updateSpotlight(parent, targetsArray, brightness) {
 }
 
 function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
+	// WRONG: see updateSpotlight() for fewer vars
 	var currentIndex = originIndex,
 		currentCoords = {
 			'x': coordinatesOfIndex[currentIndex].x,
@@ -160,8 +162,7 @@ function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
 	xStep = xMagnitude / mag * scaledPixelSize;
 	yStep = yMagnitude / mag * scaledPixelSize;
 	while (
-		currentIndex < pixelsPerGrid && currentIndex >= 0 &&
-		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&  // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
 		!collided
 	) {
@@ -176,9 +177,9 @@ function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
 		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
 
 		// checking for collisions
-		if (currentIndex > 2425 && currentIndex < 2455) {
-			pixelArray[currentIndex * 4 + 0] += 127;
-			collided = true; // ad hoc shadow-creating barrier
+		if (propertiesOfIndex[currentIndex].solid) {
+				pixelArray[currentIndex * 4 + 0] += 127;
+				collided = true;
 		} else {
 			// applying lighting
 			currentIndex = indexOfCoordinates[roundedX][roundedY];
@@ -231,66 +232,201 @@ function softPoints(currentIndex, entitiesArray) {
 	return brightness;
 }
 
-function updateEntities(entityArray) {
+function castTargetVector(originIndex, magnitudeX, magnitudeY, minRange, maxRange) {
+	// WARNING: This code is heavily duplicated from castCollisionVector. Maybe reuse the code in one more-adaptable function?
+	var currentIndex = originIndex,
+		absMagX = magnitudeX,
+		absMagY = magnitudeY,
+		mag,
+		currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		xStep,
+		yStep,
+		absXStep, // used for decrementing the mag as we count down the length we want to draw
+		absYStep,
+		absStepMag,
+		roundedX,
+		roundedY;
+	if (absMagX < 0) absMagX = -absMagX;
+	if (absMagY < 0) absMagY = -absMagY;
+	mag = absMagX + absMagY;
+	if (mag < minRange) mag = minRange;
+	if (mag > maxRange) mag = maxRange;
+	xStep = magnitudeX / mag * scaledPixelSize;
+	yStep = magnitudeY / mag * scaledPixelSize;
+	absXStep = xStep;
+	absYStep = yStep;
+	if (absXStep < 0) absXStep = -absXStep;
+	if (absYStep < 0) absYStep = -absYStep;
+	absStepMag = absXStep + absYStep; // this is always scaledPixelSize, or almost, but I think I want to calculate it in case something else changes
+	if (absStepMag < scaledPixelSize * 0.5) {
+		return currentIndex;
+	}
+	while (
+		mag > 0 &&
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
+	) {
+		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+		roundedX = currentCoords.x;
+		roundedY = currentCoords.y;
+		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+		
+		currentIndex = indexOfCoordinates[roundedX][roundedY];
+		
+		// draw the vector
+		pixelArray[currentIndex * 4 + 2] = 0;
+		
+		// collision
+		if (propertiesOfIndex[currentIndex].solid) return currentIndex;
+		
+		// counting down how long we want to draw, "using up the vector's magnitude"
+		mag -= absStepMag;
+		
+		// incrementing the coordinates for next loop
+		currentCoords.x += xStep;
+		currentCoords.y += yStep;
+	}
+	return currentIndex;
+}
+
+function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
+	// WRONG to slide along surfaces, we'll need to return something other than just an index
+	var currentIndex = originIndex,
+		absMagX = magnitudeX,
+		absMagY = magnitudeY,
+		mag,
+		currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		xStep,
+		yStep,
+		absXStep, // used for decrementing the mag as we count down the length we want to draw
+		absYStep,
+		absStepMag,
+		roundedX,
+		roundedY;
+	if (absMagX < 0) absMagX = -absMagX;
+	if (absMagY < 0) absMagY = -absMagY;
+	mag = absMagX + absMagY;
+	xStep = magnitudeX / mag * scaledPixelSize;
+	yStep = magnitudeY / mag * scaledPixelSize;
+	absXStep = xStep;
+	absYStep = yStep;
+	if (absXStep < 0) absXStep = -absXStep;
+	if (absYStep < 0) absYStep = -absYStep;
+	absStepMag = absXStep + absYStep; // this is always scaledPixelSize, or almost, but I think I want to calculate it in case something else changes
+	while (
+		mag > 0 &&
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
+	) {
+		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+		roundedX = currentCoords.x;
+		roundedY = currentCoords.y;
+		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+		
+		currentIndex = indexOfCoordinates[roundedX][roundedY];
+		
+		// draw the vector. NOTE: it will probably be too short if the entity is moving at normal speeds
+		//pixelArray[currentIndex * 4 + 2] = 0;
+		
+		// collision
+		if (propertiesOfIndex[currentIndex].solid) return currentIndex;
+		
+		// counting down how long we want to draw, "using up the vector's magnitude"
+		mag -= absStepMag;
+		
+		// incrementing the coordinates for next loop
+		currentCoords.x += xStep;
+		currentCoords.y += yStep;
+	}
+	return null;
+}
+
+function updateEntities(entitiesArray) {
 	// for each entity:
 	// 		acceleration limited and applied to speed
 	// 		speed limited and applied to position
 	// 		position rounded to integer (for lookup tables) and constrained to canvas
 	// 		nearest array index stored on entity object
-	for (var i = 0; i < entityArray.length; i++) {
-		var entity = entityArray[i];
-		if (!entity.parent) { // entity is not a child of another entity
-			// acceleration limited
-			var absDx = entity.vx, // absolute values
-				absDy = entity.vy;
-			if (absDx < 0) absDx = -absDx;
-			if (absDy < 0) absDy = -absDy;
-			if (absDx + absDy > entity.maxAcceleration) {
-				entity.dx *= entity.maxAcceleration / (absDx + absDy);
-				entity.dy *= entity.maxAcceleration / (absDx + absDy);
-			}
-			
-			// acceleration decays
-			//entity.dx *= 0.5;
-			//entity.dy *= 0.5;
-			
-			// acceleration applied to speed
-			entity.vx += entity.dx;
-			entity.vy += entity.dy;
-			// speed limited
-			var absVx = entity.vx, // absolute values
-				absVy = entity.vy;
-			if (absVx < 0) absVx = -absVx;
-			if (absVy < 0) absVy = -absVy;
-			if (absVx + absVy > entity.maxSpeed) {
-				entity.vx *= entity.maxSpeed / (absVx + absVy);
-				entity.vy *= entity.maxSpeed / (absVx + absVy);
-			}
-			// friction applied to speed
-			entity.vx *= 0.9;
-			entity.vy *= 0.9;
-			
-			// speed applied to position
-			entity.x += entity.vx;
-			entity.y += entity.vy;
+	for (var i = 0; i < entitiesArray.length; i++) {
+		var entity = entitiesArray[i],
+			collisionIndex = null;
+
+		// WARNING!!! If I use controls to move all the entities (WHICH I SHOULDN'T), then moving the camera will
+		//		cast collision vectors for things it shouldn't.
+		if (entity.vx || entity.vy) collisionIndex = castCollisionVector(entity.index, entity.vx, entity.vy);
 		
-			// x and y rounded (important or indexOfCoordinates[entity.x][enitity.y] won't work)
-			// avoiding a Math.round() function call
-			// WARNING: Rounding here will create some subtle inconsistencies in movement.
-			//				Might be better to round just before an integer is needed (like when using
-			//				entity coordinates as indices for a distance table).
-			// maybe there's a more elegant way to do this.
-			// note: there shouldn't ever be any negative coordinates, but this covers possibility anyway.
-			if (entity.x % 1 >= 0.5) entity.x += 1 - entity.x % 1;
-			if (entity.x % 1 < 0.5 && entity.x % 1 > -0.5) entity.x -= entity.x % 1;
-			if (entity.x % 1 <= -0.5) entity.x -= 1 + entity.x % 1;
-			if (entity.y % 1 >= 0.5) entity.y += 1 - entity.y % 1;
-			if (entity.y % 1 < 0.5 && entity.y % 1 > -0.5) entity.y -= entity.y % 1;
-			if (entity.y % 1 <= -0.5) entity.y -= 1 + entity.y % 1;
-		} else { // entity is a child of another entity and moves with it
-			entity.x = entity.parent.x + entity.childDisplacement.x;
-			entity.y = entity.parent.y + entity.childDisplacement.y;
+		// gravity
+		entity.vy++;
+		
+		// acceleration limited
+		var absDx = entity.vx, // absolute values
+			absDy = entity.vy;
+		if (absDx < 0) absDx = -absDx;
+		if (absDy < 0) absDy = -absDy;
+		if (absDx + absDy > entity.maxAcceleration) {
+			entity.dx *= entity.maxAcceleration / (absDx + absDy);
+			entity.dy *= entity.maxAcceleration / (absDx + absDy);
 		}
+		
+		// WRONG, maybe. Shouldn't this be necessary? Should log dx and dy sometimes.
+		//		You wouldn't want to be still, but have an old dx/dy to overcome when you start moving.
+		// acceleration decays
+		//entity.dx *= 0.5;
+		//entity.dy *= 0.5;
+		
+		// acceleration applied to speed
+		entity.vx += entity.dx;
+		entity.vy += entity.dy;
+		
+		// speed limited
+		var absVx = entity.vx, // absolute values
+			absVy = entity.vy;
+		if (absVx < 0) absVx = -absVx;
+		if (absVy < 0) absVy = -absVy;
+		if (absVx + absVy > entity.maxSpeed) {
+			entity.vx *= entity.maxSpeed / (absVx + absVy);
+			entity.vy *= entity.maxSpeed / (absVx + absVy);
+		}
+		// friction applied to speed
+		entity.vx *= 0.9;
+		entity.vy *= 0.9;
+		
+		// speed applied to position
+		// WRONG This is where some collision should go. If your trajectory vector collides, you
+		//		should teleport to its termimation point this frame instead of moving your speed.
+		entity.x += entity.vx;
+		entity.y += entity.vy;
+	
+		// coordinates rounded (important or indexOfCoordinates[entity.x][enitity.y] and propertiesOfIndex[] won't work)
+		// avoiding a Math.round() function call
+		// WARNING: Rounding here will create some subtle inconsistencies in movement.
+		//		Might be better to round just before an integer is needed (like when using
+		//		entity coordinates as indices for a distance table), or to have "pure" coords
+		//		and rounded ones both stored on the entity.
+		// maybe there's a more elegant way to do this.
+		// note: onscreen things won't have negative coords, but offscreen ones might, so this covers that.
+		if (entity.x % 1 >= 0.5) entity.x += 1 - entity.x % 1;
+		if (entity.x % 1 < 0.5 && entity.x % 1 > -0.5) entity.x -= entity.x % 1;
+		if (entity.x % 1 <= -0.5) entity.x -= 1 + entity.x % 1;
+		if (entity.y % 1 >= 0.5) entity.y += 1 - entity.y % 1;
+		if (entity.y % 1 < 0.5 && entity.y % 1 > -0.5) entity.y -= entity.y % 1;
+		if (entity.y % 1 <= -0.5) entity.y -= 1 + entity.y % 1;
 		
 		// position constrainted to canvas
 		if (entity.x < 0) entity.x = 0;
