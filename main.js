@@ -42,7 +42,7 @@ function mainLoop() {
             {index: 2400},
             {index: 2479}
         ],
-        0.01
+        0.1
     );
     //fleeing(entities.points[1], entities.points[0], 1);
     //wandering(entities.points[1], 1);
@@ -112,7 +112,7 @@ function mainLoop() {
         
         // brightness decay
         // WRONG, maybe. The logarithmic decay might not look as good as the linear one.
-        pixelArray[i * 4 + 0] *= 0.92; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic, 0.75 is ok for something steeper.
+        pixelArray[i * 4 + 0] *= 0.82; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic, 0.75 is ok for something steeper.
         pixelArray[i * 4 + 1] *= 0.92;
         if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.92;
         if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
@@ -124,14 +124,14 @@ function mainLoop() {
         pixelArray[i * 4 + 1] = red;
         pixelArray[i * 4 + 2] = red;*/
             // simpler greyscale expression
-        //pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
+        pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
         
         // this creature a really cool, if somewhat static, effect that I don't understand.
         // shoot, it's not doing it anymore [head scratching]
         //pixelArray[1 * 4 + 0] -= (entities.points[0].vy + entities.points[0].vy) * 100 / distanceFromIndexToIndex[i][entities.points[0].index];
         
         // some acceleration-based color shifts
-        var absDx = entities.points[0].dx,
+        /*var absDx = entities.points[0].dx,
             absDy = entities.points[0].dy;
         if (absDx < 0) absDx = -absDx;
         if (absDy < 0) absDy = -absDy;
@@ -142,7 +142,7 @@ function mainLoop() {
         
         // some dynamic background patterns
         if (i % (entities.points[0].dx * 5) < entities.points[0].dy * 4) pixelArray[i * 4 + 1] += 5;
-        if (i % (entities.points[0].dy * 7) < entities.points[0].dx * 5) pixelArray[i * 4 + 2] += 10;
+        if (i % (entities.points[0].dy * 7) < entities.points[0].dx * 5) pixelArray[i * 4 + 2] += 10;*/
         
         
         //pixelArray[i * 4 + 0] += pixelArray[i * 4 + 1] * 0.2;
@@ -153,8 +153,8 @@ function mainLoop() {
         //if (i === entities.points[1].index) pixelArray[i * 4 + 1] = 255; 
         
         // equalize
-        //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 1;
-        //else pixelArray[i * 4 + 0] -= 1;
+        //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 5;
+        //else pixelArray[i * 4 + 0] -= 5;
         
         // apply global color effects
         //modifyColors(i);
