@@ -1,6 +1,6 @@
 var currentMousePosition = relativeMousePosition(canvas);
 
-function patrol(entity, arrayOfTargets) {
+function patrol(entity, arrayOfTargets, acceleration) {
 	if (entity.patrolArrayTargetIndex === undefined) entity.patrolArrayTargetIndex = 0;
 	entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
 	if (
@@ -17,7 +17,7 @@ function patrol(entity, arrayOfTargets) {
 		entity.patrolArrayTargetIndex = 0;
 		entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
 	}
-	chasing(entity, entity.target, 200);
+	chasing(entity, entity.target, acceleration);
 }
 
 // WRONG: chasing() and fleeing() are the same except for a += or -= at the ends, respectively. Could probably collapse into one function.
@@ -300,6 +300,7 @@ function castTargetVector(originIndex, magnitudeX, magnitudeY, minRange, maxRang
 function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 	// WRONG to slide along surfaces, we'll need to return something other than just an index
 	var currentIndex = originIndex,
+		previousIndex = currentIndex,
 		absMagX = magnitudeX,
 		absMagY = magnitudeY,
 		mag,
@@ -307,6 +308,7 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 			'x': coordinatesOfIndex[currentIndex].x,
 			'y': coordinatesOfIndex[currentIndex].y
 		},
+		previousCoords = currentCoords,
 		xStep,
 		yStep,
 		absXStep, // used for decrementing the mag as we count down the length we want to draw
@@ -325,7 +327,7 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 	if (absYStep < 0) absYStep = -absYStep;
 	absStepMag = absXStep + absYStep; // this is always scaledPixelSize, or almost, but I think I want to calculate it in case something else changes
 	while (
-		mag > 0 &&
+		mag > 0 - scaledPixelSize && // making sure the vector never gets so short that it doesn't check an adjacent cell
 		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
 	) {
@@ -341,14 +343,19 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 		
 		currentIndex = indexOfCoordinates[roundedX][roundedY];
 		
-		// draw the vector. NOTE: it will probably be too short if the entity is moving at normal speeds
+		// draw the vector. NOTE: it will probably be too short to see if the entity is moving at normal speeds
 		//pixelArray[currentIndex * 4 + 2] = 0;
 		
 		// collision
-		if (propertiesOfIndex[currentIndex].solid) return currentIndex;
+		if (propertiesOfIndex[currentIndex].solid) {
+			return coordinatesOfIndex[previousIndex].y;
+		}
 		
 		// counting down how long we want to draw, "using up the vector's magnitude"
 		mag -= absStepMag;
+		// storing last index so we can tell what direction the collision came from.
+		previousIndex = currentIndex;
+		previousCoords = currentCoords; // WRONG I don't think we need coords
 		
 		// incrementing the coordinates for next loop
 		currentCoords.x += xStep;
@@ -365,14 +372,10 @@ function updateEntities(entitiesArray) {
 	// 		nearest array index stored on entity object
 	for (var i = 0; i < entitiesArray.length; i++) {
 		var entity = entitiesArray[i],
-			collisionIndex = null;
-
-		// WARNING!!! If I use controls to move all the entities (WHICH I SHOULDN'T), then moving the camera will
-		//		cast collision vectors for things it shouldn't.
-		if (entity.vx || entity.vy) collisionIndex = castCollisionVector(entity.index, entity.vx, entity.vy);
+			collision = null;
 		
 		// gravity
-		entity.vy++;
+		//entity.vy++;
 		
 		// acceleration limited
 		var absDx = entity.vx, // absolute values
@@ -407,11 +410,21 @@ function updateEntities(entitiesArray) {
 		entity.vx *= 0.9;
 		entity.vy *= 0.9;
 		
-		// speed applied to position
-		// WRONG This is where some collision should go. If your trajectory vector collides, you
-		//		should teleport to its termimation point this frame instead of moving your speed.
-		entity.x += entity.vx;
-		entity.y += entity.vy;
+		// check for collisions next frame
+		// WARNING!!! If I use controls to move all the entities (WHICH I SHOULDN'T), then moving the camera will
+		//		cast collision vectors for things it shouldn't.
+		/*if (entity.vx || entity.vy) */if (!entity.noCollision) collision = castCollisionVector(entity.index, entity.vx, entity.vy);
+		
+		// slide if collide
+		if (!collision) { // speed applied to position
+			entity.x += entity.vx;
+			entity.y += entity.vy;
+		} else {
+			// WRONG ad-hoc only accounts for colliding with something below or above
+			// QUESTION: Is rounding moving the entity inside the wall?
+			entity.x += entity.vx;
+			entity.y = collision;
+		}
 	
 		// coordinates rounded (important or indexOfCoordinates[entity.x][enitity.y] and propertiesOfIndex[] won't work)
 		// avoiding a Math.round() function call

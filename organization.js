@@ -32,7 +32,13 @@ function initializeNeighborsOfIndex() {
 
 function initializePropertiesOfIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
-		if (i > 2425 && i < 2455) {
+		// a solid block
+		if (
+			coordinatesOfIndex[i].x > 300 &&
+			coordinatesOfIndex[i].x < 500 &&
+			coordinatesOfIndex[i].y > 400 &&
+			coordinatesOfIndex[i].y < 500
+		) {
 			propertiesOfIndex.push({
 				'solid': true
 			});
