@@ -7,11 +7,11 @@ var canvas = $('canvas')[0],
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),
 	pixelArray = imageData.data,
 	entities = {
-		'lines': [],
 		'points': [],
-		'obstacles': [],
-		'spotlights': [],
 		'all': []
+	},
+	effects = {
+		'snow': {}
 	},
 	frameCounter = 1;
 

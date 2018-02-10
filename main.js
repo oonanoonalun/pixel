@@ -70,8 +70,9 @@ function mainLoop() {
         var brightness = 0;
         
         // WRONG just testing... Sort of not just testing.
+        // assembling the spotlight target
         if (distanceFromIndexToIndex[i][entities.points[1].index] < 100) {
-            beamTargets.push(i);
+            if (i % 2 === 0) beamTargets.push(i);
         }
         
         
@@ -87,13 +88,25 @@ function mainLoop() {
         
         // Creating a solid block
         if (
-            absXDistanceFromIndexToIndex[i][entities.points[2].index] < 75 &&
+            absXDistanceFromIndexToIndex[i][entities.points[2].index] < 300 &&
             absYDistanceFromIndexToIndex[i][entities.points[2].index] < 75
         ) {
             propertiesOfIndex[i].solid = true;
         } else {
             propertiesOfIndex[i].solid = false;
         }
+        
+        // snow
+        // WRONG I think I need to do this right, with entities
+        /*var snowflakeIndex = (45 + Math.round(frameCounter % (5 * pixelsPerColumn) / 5) * pixelsPerRow);
+        if (pixelArray[snowflakeIndex * 4 + 0]) {
+            if (propertiesOfIndex[snowflakeIndex].solid) {
+                pixelArray[snowflakeIndex * 4 + 0] += 255;
+                effects.snow.stoppedSnowing = true;
+            } else if (!effects.snow.stoppedSnowing) {
+                pixelArray[snowflakeIndex * 4 + 0] += 96;
+            }
+        }*/
         
         // apply sum brightness to pixel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
@@ -111,9 +124,9 @@ function mainLoop() {
         // brightness decay
         // WRONG, maybe. The logarithmic decay might not look as good as the linear one.
         pixelArray[i * 4 + 0] *= 0.75;//-= 3; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic
-        pixelArray[i * 4 + 1] *= 0.88;
-        if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.88;
-        if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
+        //pixelArray[i * 4 + 1] *= 0.88;
+        //if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.88;
+        //if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
         //pixelArray[i * 4 + 2] -= 2;
         
         // greyscale

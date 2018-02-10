@@ -415,13 +415,12 @@ function updateEntities(entitiesArray) {
 		//		cast collision vectors for things it shouldn't.
 		/*if (entity.vx || entity.vy) */if (!entity.noCollision) collision = castCollisionVector(entity.index, entity.vx, entity.vy);
 		
-		// slide if collide
+		// slide or remove if collide
 		if (!collision) { // speed applied to position
 			entity.x += entity.vx;
 			entity.y += entity.vy;
 		} else {
 			// WRONG ad-hoc only accounts for colliding with something below or above
-			// QUESTION: Is rounding moving the entity inside the wall?
 			entity.x += entity.vx;
 			entity.y = collision;
 		}
