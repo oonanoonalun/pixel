@@ -57,7 +57,7 @@ function wandering(entity, accelerationScale) {
 }
 
 // WRONG, maybe. I think this should just be called "castSpotlight()," since I don't think it relies on any external object that it's updating.
-function updateSpotlight(parent, targetIndex) {
+function castSpotlight(parent, targetIndex) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 
 	var arrayOfTargetIndices = findSpotlightTargets(parent.index, targetIndex, parent.spotlight.narrowness);
@@ -102,6 +102,9 @@ function updateSpotlight(parent, targetIndex) {
 				// applying lighting
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
 				pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+				for (var j = 0; j < neighborsOfIndex[currentIndex].length; j++) {
+					pixelArray[neighborsOfIndex[currentIndex][j] * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+				}
 			}
 
 			// incrementing for next loop
@@ -133,7 +136,7 @@ function findSpotlightTargets(originIndex, targetIndex, narrowness) {
 }
 
 function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
-	// WRONG: see updateSpotlight() for fewer vars
+	// WRONG: see castSpotlight() for fewer vars
 	var currentIndex = originIndex,
 		currentCoords = {
 			'x': coordinatesOfIndex[currentIndex].x,
@@ -184,7 +187,7 @@ function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
 }
 
 function castRayToPerimeter(originIndex, xMagnitude, yMagnitude) {
-	// WRONG: see updateSpotlight() for fewer vars
+	// WRONG: see castSpotlight() for fewer vars
 	var currentIndex = originIndex,
 		currentCoords = {
 			'x': coordinatesOfIndex[currentIndex].x,

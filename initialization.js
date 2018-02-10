@@ -33,7 +33,7 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 5,
 			'maxSpeed': 25,
-			'brightness': 3072,
+			'brightness': 20000,
 			'type': 'point',
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
 			'shouldBeRemoved': false // WRONG: Doesn't need to be initialized. Same for lines.
@@ -43,7 +43,7 @@ function initializeEntities() {
 		entities.all.push(point);
 	}
 	entities.points[0].spotlight = {
-		'brightness': 2048,
+		'brightness': 384,
 		'narrowness': 3.75
 	};
 	entities.points[1].noCollision = true;

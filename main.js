@@ -16,7 +16,7 @@ function mainLoop() {
     controls(4, entities.points[0].spotlight.narrowness, true);
     
     // player spotlight
-    updateSpotlight(entities.points[0], entities.points[1].index);
+    castSpotlight(entities.points[0], entities.points[1].index);
     
     // updating entity position, speed, acceleration, nearest index, and child positions
     updateEntities(entities.all);   
@@ -42,7 +42,7 @@ function mainLoop() {
             {index: 2400},
             {index: 2479}
         ],
-        0.1
+        0.01
     );
     //fleeing(entities.points[1], entities.points[0], 1);
     //wandering(entities.points[1], 1);
@@ -70,14 +70,14 @@ function mainLoop() {
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
-        //brightness += softPoints(i, [entities.points[0], entities.points[2]]);
+        //brightness += softPoints(i, [entities.points[0]]);
         //brightness += softLines(i, entities.points);
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
         
         
-        // Creating a solid block
+        // Creating a solid block that can be moved, centered on entities.points[2]
         if (
-            absXDistanceFromIndexToIndex[i][entities.points[2].index] < 300 &&
+            absXDistanceFromIndexToIndex[i][entities.points[2].index] < 75 &&
             absYDistanceFromIndexToIndex[i][entities.points[2].index] < 75
         ) {
             propertiesOfIndex[i].solid = true;
@@ -104,7 +104,7 @@ function mainLoop() {
         // WRONG? Not sure if this is really doing anything at all
         var neighborsBrightness = 0;
         for (var k = 0; k < neighborsOfIndex[i].length; k ++) {
-            neighborsBrightness += pixelArray[i * 4 + 0];
+            neighborsBrightness += pixelArray[neighborsOfIndex[i][k] * 4 + 0];
         }
         neighborsBrightness /= neighborsOfIndex[i].length + 1;
         brightness += neighborsBrightness;
