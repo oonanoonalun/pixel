@@ -57,40 +57,11 @@ function wandering(entity, accelerationScale) {
 }
 
 // WRONG, maybe. I think this should just be called "castSpotlight()," since I don't think it relies on any external object that it's updating.
-function updateSpotlight(parent, targetsArray, brightness) {
+function updateSpotlight(parent, targetIndex, brightness) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
-	// WRONG just testing
-	var arrayOfTargetIndices = targetsArray;
-	// WRONG just testing (i.e. should be commented back in)
-	/*var arrayOfTargetIndices = [
-		centerTargetIndex,
-		centerTargetIndex - 1,
-		centerTargetIndex - 2,
-		centerTargetIndex - 3,
-		centerTargetIndex + 1,
-		centerTargetIndex + 2,
-		centerTargetIndex + 3,
-		centerTargetIndex - 1 * pixelsPerRow,
-		centerTargetIndex - 2 * pixelsPerRow,
-		centerTargetIndex - 3 * pixelsPerRow,
-		centerTargetIndex + 1 * pixelsPerRow,
-		centerTargetIndex + 2 * pixelsPerRow,
-		centerTargetIndex + 3 * pixelsPerRow,
-		// denser:
-		centerTargetIndex - 1 * pixelsPerRow - 1,
-		centerTargetIndex - 2 * pixelsPerRow - 1,
-		centerTargetIndex - 3 * pixelsPerRow - 1,
-		centerTargetIndex + 1 * pixelsPerRow + 1,
-		centerTargetIndex + 2 * pixelsPerRow + 1,
-		centerTargetIndex + 3 * pixelsPerRow + 1,
-		centerTargetIndex - 1 * pixelsPerRow + 1,
-		centerTargetIndex - 2 * pixelsPerRow + 1,
-		centerTargetIndex - 3 * pixelsPerRow + 1,
-		centerTargetIndex + 1 * pixelsPerRow - 1,
-		centerTargetIndex + 2 * pixelsPerRow - 1,
-		centerTargetIndex + 3 * pixelsPerRow - 1,
-	];*/
-	// creating the beam rays
+
+	var arrayOfTargetIndices = findSpotlightTargets(parent.index, targetIndex, parent.spotlight.narrowness);
+
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {
 		// only draw half of the rays each frame
 		// NOTE: could maybe do this even more broken up if the target density is high?
@@ -131,7 +102,7 @@ function updateSpotlight(parent, targetsArray, brightness) {
 			} else {
 				// applying lighting
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
-				pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+				pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
 			}
 
 			// incrementing for next loop
@@ -139,6 +110,25 @@ function updateSpotlight(parent, targetsArray, brightness) {
 			currentCoords.y += yStep;
 		}
 	}
+}
+
+function findSpotlightTargets(originIndex, targetIndex, narrowness) {
+	var targetIndices = [];
+	var beamCenterTargetIndex = castRayToPerimeter(
+            originIndex,
+            xDistanceFromIndexToIndex[originIndex][targetIndex],
+            yDistanceFromIndexToIndex[originIndex][targetIndex]
+        );
+    for (var beamTargetSearch = 0; beamTargetSearch < perimeterIndices.length; beamTargetSearch++) {
+        var perimIndex = perimeterIndices[beamTargetSearch];
+        if (
+            distanceFromIndexToIndex[perimIndex][beamCenterTargetIndex] <
+            distanceFromIndexToIndex[beamCenterTargetIndex][originIndex] / narrowness
+        ) {
+            targetIndices.push(perimIndex);
+        }
+    }
+	return targetIndices;
 }
 
 function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
@@ -190,6 +180,48 @@ function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
 		currentCoords.x += xStep;
 		currentCoords.y += yStep;
 	}
+}
+
+function castRayToPerimeter(originIndex, xMagnitude, yMagnitude) {
+	// WRONG: see updateSpotlight() for fewer vars
+	var currentIndex = originIndex,
+		currentCoords = {
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		xStep,
+		yStep,
+		mag,
+		absXMag = xMagnitude,
+		absYMag = yMagnitude,
+		roundedX = currentCoords.x,
+		roundedY = currentCoords.y;
+	if (absXMag < 0) absXMag = -absXMag;
+	if (absYMag < 0) absYMag = -absYMag;
+	mag = absXMag + absYMag;
+	xStep = xMagnitude / mag * scaledPixelSize;
+	yStep = yMagnitude / mag * scaledPixelSize;
+	while (
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&  // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
+	) {
+		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+		roundedX = currentCoords.x;
+		roundedY = currentCoords.y;
+		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+
+		currentIndex = indexOfCoordinates[roundedX][roundedY];
+		
+		// incrementing for next loop
+		currentCoords.x += xStep;
+		currentCoords.y += yStep;
+	}
+	return currentIndex; // This *should* be a perimeter index, but we could also check each step against perimeterIndices[] (but almost certainly shouldn't)
 }
 
 function softLines(currentIndex, entitiesArray) {

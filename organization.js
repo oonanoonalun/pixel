@@ -7,18 +7,41 @@ var distanceFromIndexToIndex = [],
 	indexOfCoordinates = [],
 	neighborsOfIndex = [],
 	propertiesOfIndex = [],
+	perimeterIndices = [],
 	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow,
 	maxScreenDistance;
 
 initializeDistanceLookupTables();
 initializeCoordinatesLookupTables();
-initializeNeighborsOfIndex();
+initializeMisc();
 
 maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 
 initializeEntities(); // this has to happen after indexOfCoordinates[][] is initialized.
 
-initializePropertiesOfIndex(); // this might not need to happen after initializeEntities(), but it might be convenient to
+
+
+////////////////////////////
+// misc. initialization
+
+function initializeMisc() {
+	initializeNeighborsOfIndex();
+	initializePropertiesOfIndex();
+	initializePerimeterIndices();
+}
+
+function initializePerimeterIndices() {
+	for (var i = 0; i < pixelsPerGrid; i++) {
+		// top row minus left and rightmost indices (avoiding duplicating corners)
+		if (i < pixelsPerRow - 1 && i > 0) perimeterIndices.push(i);
+		// bottom row minus left and rightmost indices (avoiding duplicating corners)
+		if (i > pixelsPerGrid - pixelsPerRow && i < pixelsPerGrid - 1) perimeterIndices.push(i);
+		// left column
+		if (i % pixelsPerRow === 0) perimeterIndices.push(i);
+		// right column
+		if ((i + 1) % pixelsPerRow === 0) perimeterIndices.push(i);
+	}
+}
 
 function initializeNeighborsOfIndex() {
 	var neighborRadius = 8; // any cell within this radius will be considered a neighbor
@@ -49,6 +72,9 @@ function initializePropertiesOfIndex() {
 		}
 	}
 }
+
+// end misc. initialization
+//////////////////////////////
 
 //////////////////////////////////////////////
 // coordinates lookup tables inititalization

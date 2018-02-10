@@ -118,15 +118,19 @@ function controls(acceleration, beamNarrowness, controlSpotlight) {
 	// spotlight control
 	if (controlSpotlight) {
 		// mouse aims spotlight
-		var mag = distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index], // i.e. magnitude. made a var so  it doesn't get looked up twice
+		// use with old, circle-target method
+		/*var mag = distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index], // i.e. magnitude. made a var so  it doesn't get looked up twice
 			 nXMag = xDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag, // i.e. normalized x magnitude
 			 nYMag = yDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag;
 		entities.points[1].x = entities.points[0].x + beamNarrowness * nXMag;
-		entities.points[1].y = entities.points[0].y + beamNarrowness * nYMag;
+		entities.points[1].y = entities.points[0].y + beamNarrowness * nYMag;*/
+		entities.points[1].x = currentMousePosition.x;
+		entities.points[1].y = currentMousePosition.y;
+		
 		
 		// change spotlight width
-		if (keysDown[KEY_R] || keysDown[KEY_U] && entities.points[0].spotlight.narrowness < 400) entities.points[0].spotlight.narrowness += 10;
-		if (keysDown[KEY_W] || keysDown[KEY_O] && entities.points[0].spotlight.narrowness > 110) entities.points[0].spotlight.narrowness -= 10;
+		if ((keysDown[KEY_R] || keysDown[KEY_U]) && entities.points[0].spotlight.narrowness < 8) entities.points[0].spotlight.narrowness += 1;
+		if ((keysDown[KEY_W] || keysDown[KEY_O]) && entities.points[0].spotlight.narrowness > 2) entities.points[0].spotlight.narrowness -= 1;
 	} else { // spotlight controlled by player vx and vy
 		var targetIndex = castTargetVector(entities.points[0].index, entities.points[0].vx * 100, entities.points[0].vy * 100, 50, 400);
 		entities.points[1].x = coordinatesOfIndex[targetIndex].x;

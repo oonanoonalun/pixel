@@ -16,14 +16,10 @@ function mainLoop() {
     controls(4, entities.points[0].spotlight.narrowness, true);
     
     // player spotlight
-    updateSpotlight(entities.points[0], /*entities.points[1].index*/ beamTargets, 384);
+    updateSpotlight(entities.points[0], entities.points[1].index);
     
     // updating entity position, speed, acceleration, nearest index, and child positions
-    updateEntities(entities.all);
-    
-    //WRONG Just testing. Acutally, sort of using this now. Shouldn't be global. Should probably be stored on the spotlight object.
-    beamTargets = [];
-    
+    updateEntities(entities.all);   
     
     // mouse position is controlling entities.points[1]
     //entities.points[1].x = currentMousePosition.x;
@@ -68,14 +64,7 @@ function mainLoop() {
     for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
-        
-        // WRONG just testing... Sort of not just testing.
-        // assembling the spotlight target
-        if (distanceFromIndexToIndex[i][entities.points[1].index] < 100) {
-            if (i % 2 === 0) beamTargets.push(i);
-        }
-        
-        
+ 
         // add noise
         //pixelArray[i * 4 + 0] += Math.random() * 16 - 8;
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
