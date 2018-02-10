@@ -113,9 +113,9 @@ function mainLoop() {
         // brightness decay
         // WRONG, maybe. The logarithmic decay might not look as good as the linear one.
         pixelArray[i * 4 + 0] *= 0.92; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic, 0.75 is ok for something steeper.
-        //pixelArray[i * 4 + 1] *= 0.88;
-        //if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.88;
-        //if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
+        pixelArray[i * 4 + 1] *= 0.92;
+        if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.92;
+        if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
         //pixelArray[i * 4 + 2] -= 2;
         
         // greyscale
@@ -123,10 +123,30 @@ function mainLoop() {
         /*var red = pixelArray[i + 4 + 0];
         pixelArray[i * 4 + 1] = red;
         pixelArray[i * 4 + 2] = red;*/
-        pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
+            // simpler greyscale expression
+        //pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
         
         // this creature a really cool, if somewhat static, effect that I don't understand.
+        // shoot, it's not doing it anymore [head scratching]
         //pixelArray[1 * 4 + 0] -= (entities.points[0].vy + entities.points[0].vy) * 100 / distanceFromIndexToIndex[i][entities.points[0].index];
+        
+        // some acceleration-based color shifts
+        var absDx = entities.points[0].dx,
+            absDy = entities.points[0].dy;
+        if (absDx < 0) absDx = -absDx;
+        if (absDy < 0) absDy = -absDy;
+        pixelArray[i * 4 + 0] -= ((absDx + absDy) / 1) * 50 / (distanceFromIndexToIndex[entities.points[0].index][i] / 8);
+        pixelArray[i * 4 + 1] += absDx * 50 / (distanceFromIndexToIndex[entities.points[0].index][i] / 8);
+        pixelArray[i * 4 + 2] += absDy * 50 / (distanceFromIndexToIndex[entities.points[0].index][i] / 8);
+        
+        
+        // some dynamic background patterns
+        if (i % (entities.points[0].dx * 5) < entities.points[0].dy * 4) pixelArray[i * 4 + 1] += 5;
+        if (i % (entities.points[0].dy * 7) < entities.points[0].dx * 5) pixelArray[i * 4 + 2] += 10;
+        
+        
+        //pixelArray[i * 4 + 0] += pixelArray[i * 4 + 1] * 0.2;
+        //pixelArray[i * 4 + 0] += pixelArray[i * 4 + 2] * 0.2;
         
         //drawing some stuff in color, after greyscaling
         // drawing entities.points[1]

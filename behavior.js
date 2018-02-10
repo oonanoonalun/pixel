@@ -433,8 +433,8 @@ function updateEntities(entitiesArray) {
 		// WRONG, maybe. Shouldn't this be necessary? Should log dx and dy sometimes.
 		//		You wouldn't want to be still, but have an old dx/dy to overcome when you start moving.
 		// acceleration decays
-		//entity.dx *= 0.5;
-		//entity.dy *= 0.5;
+		entity.dx *= 0.9;
+		entity.dy *= 0.9;
 		
 		// acceleration applied to speed
 		entity.vx += entity.dx;
