@@ -37,13 +37,25 @@ function initializeMisc() {
 function initializePerimeterIndices() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
 		// top row minus left and rightmost indices (avoiding duplicating corners)
-		if (i < pixelsPerRow - 1 && i > 0) perimeterIndices.push(i);
+		if (i < pixelsPerRow - 1 && i > 0) {
+			propertiesOfIndex[i].perimeter = true;
+			perimeterIndices.push(i);
+		}
 		// bottom row minus left and rightmost indices (avoiding duplicating corners)
-		if (i > pixelsPerGrid - pixelsPerRow && i < pixelsPerGrid - 1) perimeterIndices.push(i);
+		if (i > pixelsPerGrid - pixelsPerRow && i < pixelsPerGrid - 1) {
+			propertiesOfIndex[i].perimeter = true;
+			perimeterIndices.push(i);
+		}
 		// left column
-		if (i % pixelsPerRow === 0) perimeterIndices.push(i);
+		if (i % pixelsPerRow === 0) {
+			propertiesOfIndex[i].perimeter = true;
+			perimeterIndices.push(i);
+		}
 		// right column
-		if ((i + 1) % pixelsPerRow === 0) perimeterIndices.push(i);
+		if ((i + 1) % pixelsPerRow === 0) {
+			propertiesOfIndex[i].perimeter = true;
+			perimeterIndices.push(i);
+		}
 	}
 }
 
@@ -65,21 +77,9 @@ function initializeNeighborsOfIndexInRadius() {
 
 function initializePropertiesOfIndex() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
-		// a solid block
-		if (
-			coordinatesOfIndex[i].x > 300 &&
-			coordinatesOfIndex[i].x < 500 &&
-			coordinatesOfIndex[i].y > 400 &&
-			coordinatesOfIndex[i].y < 500
-		) {
 			propertiesOfIndex.push({
-				'solid': true
+				
 			});
-		} else {
-			propertiesOfIndex.push({
-				'solid': false
-			});
-		}
 	}
 }
 

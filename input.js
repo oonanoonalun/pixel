@@ -3,6 +3,7 @@ var KEY_W = 87,
         KEY_A = 65,
         KEY_D = 68,
         KEY_SPACE = 32,
+		  KEY_SHIFT = 16,
         KEY_Q = 81,
         KEY_E = 69,
         KEY_Z = 90,
@@ -25,6 +26,7 @@ var KEY_W = 87,
         KEY_O = 79,
         KEY_U = 85,
         KEY_M = 77,
+		  KEY_G = 71,
         KEY_R = 82,
         KEY_V = 86,
         KEY_F = 70,
@@ -174,12 +176,14 @@ function controlsPlatformer(acceleration, jumpAcceleration, beamNarrowness, bCon
 	// jump energy management
 	if (player.altitude === 0) player.jumpEnergy = player.maxJumpEnergy;
 	
-	// spotlight control
-	// mouse aims spotlight
-	entities.points[1].x = currentMousePosition.x;
-	entities.points[1].y = currentMousePosition.y;
-	
-	// change spotlight width
-	if ((keysDown[KEY_R] || keysDown[KEY_U]) && player.spotlight.narrowness < 8) player.spotlight.narrowness += 0.25;
-	if ((keysDown[KEY_W] || keysDown[KEY_O]) && player.spotlight.narrowness > 2) player.spotlight.narrowness -= 0.5;
+	if (bControlSpotlight) {
+		// spotlight control
+		// mouse aims spotlight
+		entities.points[1].x = currentMousePosition.x;
+		entities.points[1].y = currentMousePosition.y;
+		
+		// change spotlight width
+		if ((keysDown[KEY_R] || keysDown[KEY_U]) && player.spotlight.narrowness < 8) player.spotlight.narrowness += 0.25;
+		if ((keysDown[KEY_W] || keysDown[KEY_O]) && player.spotlight.narrowness > 2) player.spotlight.narrowness -= 0.5;
+	}
 }

@@ -1,13 +1,22 @@
 var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
-
-// TEMPORARY maybe should make this "official" and include it in initializePerimeterIndices()
-for (var i = 0; i < perimeterIndices.length; i++) {
-    propertiesOfIndex[perimeterIndices[i]].perimeter = true;
-}
-
+    
 function mainLoop() {
+    // TEMP generate ad-hoc platforming map
+    if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
+        for (var mg = 0; mg < pixelsPerGrid; mg++) { // i.e. 'mg' = map generation
+            propertiesOfIndex[mg].plat = false;
+            propertiesOfIndex[mg].solid = false;
+            if (mg - 1 >= 0 && propertiesOfIndex[mg - 1].plat) {
+                if (Math.random() < 0.75) propertiesOfIndex[mg].plat = true;
+            }
+            else if (Math.random() < 0.005) {
+                propertiesOfIndex[mg].plat = true;
+            }
+            if (propertiesOfIndex[mg].perimeter) propertiesOfIndex[mg].solid = true;
+        }
+    }
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -16,10 +25,10 @@ function mainLoop() {
     
     // player controls
     //controls(4, entities.points[0].spotlight.narrowness);
-    controlsPlatformer(4, 12, entities.points[0].spotlight.narrowness);
+    controlsPlatformer(2, 12, entities.points[0].spotlight.narrowness, false);
     
     // player spotlight
-    castSpotlight(entities.points[0], entities.points[1].index, 0);
+    //castSpotlight(entities.points[0], entities.points[1].index, 0);
     
     // updating entity position, speed, acceleration, collision, nearest index, and child position
     updateEntities(entities.all);   
@@ -39,16 +48,26 @@ function mainLoop() {
     );*/
     //chasing(entities.points[2], entities.points[0], 1);
     //wandering(entities.points[2], 0.1);
-    patrol(
+    /*patrol(
         entities.points[2],
         [
             {index: 39},
             {index: 4759}
         ],
         0.1
-    );
+    );*/
     //fleeing(entities.points[1], entities.points[0], 1);
-    //wandering(entities.points[1], 1);
+    
+    // TEMP platformer wandering spotlight
+    // NOTE: Should maybe have a "justX/Y" option for wandering()
+    wandering(entities.points[2], 2);
+    castSpotlight(entities.points[2], entities.points[1].index, 0);
+    entities.points[2].vy -= 3; // light tries to stay high
+    wandering(entities.points[1], 2);
+    //entities.points[1].x = entities.points[2].x; // target stays directly under spotlight
+    entities.points[1].y = coordinatesOfIndex[4720].y; // target point stays on the bottom row
+    
+    
     /*patrol(
         entities.points[1],
         [
@@ -78,31 +97,6 @@ function mainLoop() {
         //brightness += softLines(i, entities.points);
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
         
-        
-        // Creating a solid block that can be moved, centered on entities.points[2]
-        // WRONG Wiping .solid property of everything else
-        if (
-            (absXDistanceFromIndexToIndex[i][entities.points[2].index] < 75 &&
-            absYDistanceFromIndexToIndex[i][entities.points[2].index] < 75) ||
-            propertiesOfIndex[i].perimeter === true
-        ) {
-            propertiesOfIndex[i].solid = true;
-        } else {
-            propertiesOfIndex[i].solid = false;
-        }
-        
-        // snow
-        // WRONG I think I need to do this right, with entities
-        /*var snowflakeIndex = (45 + Math.round(frameCounter % (5 * pixelsPerColumn) / 5) * pixelsPerRow);
-        if (pixelArray[snowflakeIndex * 4 + 0]) {
-            if (propertiesOfIndex[snowflakeIndex].solid) {
-                pixelArray[snowflakeIndex * 4 + 0] += 255;
-                effects.snow.stoppedSnowing = true;
-            } else if (!effects.snow.stoppedSnowing) {
-                pixelArray[snowflakeIndex * 4 + 0] += 96;
-            }
-        }*/
-        
         // blend
         screenFxBlend = true;
         if (screenFxBlend) {
@@ -122,12 +116,22 @@ function mainLoop() {
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 5;
         
         
+        // TEMP platforming experiment
+        if (propertiesOfIndex[i].plat && brightness > 128 && i !== entities.points[0].index) {
+            propertiesOfIndex[i].solid = true;
+            pixelArray[i * 4 + 1] = 255;
+        } else {
+            if (!propertiesOfIndex[i].perimeter) propertiesOfIndex[i].solid = false;
+        }
+        if (i === entities.points[0].index) pixelArray[i * 4 + 1] = 255;
+        if (propertiesOfIndex[i].solid) pixelArray[i * 4 + 2] = 255;
+        
         // brightness decay
         var brightnessDecayScale = 0.82; // brightness is this amount of its value last frame
         pixelArray[i * 4 + 0] *= brightnessDecayScale;
         
         // color or greyscale
-        var screenFxGreyscale = true;
+        var screenFxGreyscale = false;
         if (!screenFxGreyscale) { // color
             var screenBlueBase = 48;
             pixelArray[i * 4 + 1] *= brightnessDecayScale;

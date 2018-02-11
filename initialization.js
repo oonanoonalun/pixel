@@ -26,8 +26,8 @@ initializeRGBAChannels();
 function initializeEntities() {
 	// key (numbers are entities.points[n]):
 	//		0 = player
-	//		1 = player spotlight target
-	//		2 = obstacle
+	//		1 = player spotlight target or general-purpose target
+	//		2 = autonomous agent
 	entities.points = [];
 	for (var j = 0; j < 3; j++) {
 		point = {
@@ -39,7 +39,7 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 5,
 			'maxSpeed': 25,
-			'brightness': 20000,
+			'brightness': 256,
 			'type': 'point',
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
 			'shouldBeRemoved': false // WRONG: Doesn't need to be initialized. Same for lines.
@@ -53,7 +53,13 @@ function initializeEntities() {
 		'narrowness': 3.75
 	};
 	entities.points[1].noCollision = true;
+	// point 2
 	entities.points[2].noCollision = true; // WRONG this is weird. Think about how to deal with obstacle-obstacle collision. If this isn't true, the object collides with the solid things built around it if all the blocks around it are built as solid.
+	entities.points[2].spotlight = {
+		'brightness': 384,
+		'narrowness': 1
+	};
+	entities.points[2].maxSpeed = 4;
 }
 
 function initializeRGBAChannels() {

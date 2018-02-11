@@ -332,7 +332,7 @@ function castAltitudeRay(originIndex) {
 		currentCoords.x += xStep;
 		currentCoords.y += yStep;
 	}
-	return 'over abyss'; // WRONG this might cause problems
+	return 'over abyss'; // WRONG this might cause problems, depending on what we use castAltitudeRay() for.
 }
 
 function updateEntities(entitiesArray) {
@@ -378,8 +378,14 @@ function updateEntities(entitiesArray) {
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
 		// friction applied to speed
-		entity.vx *= 0.9;
-		entity.vy *= 0.9;
+		if (entity === entities.points[0].altitude && entities.points[0].altitude === 0) {
+			// friction higher when grounded
+			entity.vx *= 0.6;
+			entity.vy *= 0.6;
+		} else {
+			entity.vx *= 0.9;
+			entity.vy *= 0.9;
+		}
 		
 		// check for collisions next frame
 		// WARNING!!! If I use controls to move all the entities (WHICH I SHOULDN'T), then moving the camera will
@@ -412,10 +418,23 @@ function updateEntities(entitiesArray) {
 		if (entity.y % 1 <= -0.5) entity.y -= 1 + entity.y % 1;
 		
 		// position constrainted to canvas
-		if (entity.x < 0) entity.x = 0;
-		if (entity.x > canvas.width - 1) entity.x = canvas.width - 1;
-		if (entity.y < 0) entity.y = 0;
-		if (entity.y > canvas.height - 1) entity.y = canvas.height - 1;
+		// notification if player touches the edge of the screen
+		if (entity.x < 0) {
+			entity.x = 0;
+			if (entity === entities.points[0]) console.log('player offscreen!');
+		}
+		if (entity.x > canvas.width - 1) {
+			entity.x = canvas.width - 1;
+			if (entity === entities.points[0]) console.log('player offscreen!');
+		}
+		if (entity.y < 0) {
+			entity.y = 0;
+			if (entity === entities.points[0]) console.log('player offscreen!');
+		}
+		if (entity.y > canvas.height - 1) {
+			entity.y = canvas.height - 1;
+			if (entity === entities.points[0]) console.log('player offscreen!');
+		}
 		
 		// nearest array index assigned
 		// NOTE: Changing an entities index won't move it, as its coords will just reset its index.
