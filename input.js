@@ -82,26 +82,7 @@ var relativeMousePosition = (element) => {
 // end mouse
 //////////////////////////
 
-function controls(acceleration, beamNarrowness, controlSpotlight) {
-	// 150 beamNarrowness is moderate 
-	// controlling spotlght direction with buttons
-	/*if (keysDown[KEY_E]) {
-		entities.points[1].childDisplacement.y = -150;
-		if (!keysDown[KEY_S] && !keysDown[KEY_F]) entities.points[1].childDisplacement.x = 0;
-	}
-	if (keysDown[KEY_D]) {
-		entities.points[1].childDisplacement.y = +150;
-		if (!keysDown[KEY_S] && !keysDown[KEY_F]) entities.points[1].childDisplacement.x = 0;
-	}
-	if (keysDown[KEY_S]) {
-		entities.points[1].childDisplacement.x = -150;
-		if (!keysDown[KEY_E] && !keysDown[KEY_D]) entities.points[1].childDisplacement.y = 0;
-	}
-	if (keysDown[KEY_F]) {
-		entities.points[1].childDisplacement.x = +150;
-		if (!keysDown[KEY_E] && !keysDown[KEY_D]) entities.points[1].childDisplacement.y = 0;
-	}*/
-	
+function controls(acceleration, beamNarrowness, bControlSpotlight) {
 	// movement
 	// left handed
 	if (keysDown[KEY_E]) entities.points[0].dy -= acceleration;
@@ -116,25 +97,89 @@ function controls(acceleration, beamNarrowness, controlSpotlight) {
 	if (keysDown[KEY_L]) entities.points[0].dx += acceleration;
 	
 	// spotlight control
-	if (controlSpotlight) {
-		// mouse aims spotlight
-		// use with old, circle-target method
-		/*var mag = distanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index], // i.e. magnitude. made a var so  it doesn't get looked up twice
-			 nXMag = xDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag, // i.e. normalized x magnitude
-			 nYMag = yDistanceFromIndexToIndex[entities.points[0].index][currentMousePosition.index] / mag;
-		entities.points[1].x = entities.points[0].x + beamNarrowness * nXMag;
-		entities.points[1].y = entities.points[0].y + beamNarrowness * nYMag;*/
-		entities.points[1].x = currentMousePosition.x;
-		entities.points[1].y = currentMousePosition.y;
-		
-		
-		// change spotlight width
-		if ((keysDown[KEY_R] || keysDown[KEY_U]) && entities.points[0].spotlight.narrowness < 8) entities.points[0].spotlight.narrowness += 0.25;
-		if ((keysDown[KEY_W] || keysDown[KEY_O]) && entities.points[0].spotlight.narrowness > 2) entities.points[0].spotlight.narrowness -= 0.5;
-	} else { // spotlight controlled by player vx and vy
-		var targetIndex = castTargetVector(entities.points[0].index, entities.points[0].vx * 100, entities.points[0].vy * 100, 50, 400);
-		entities.points[1].x = coordinatesOfIndex[targetIndex].x;
-		entities.points[1].y = coordinatesOfIndex[targetIndex].y;
-	}
+	// mouse aims spotlight
+	entities.points[1].x = currentMousePosition.x;
+	entities.points[1].y = currentMousePosition.y;
+	
+	// change spotlight width
+	if ((keysDown[KEY_R] || keysDown[KEY_U]) && player.spotlight.narrowness < 8) player.spotlight.narrowness += 0.25;
+	if ((keysDown[KEY_W] || keysDown[KEY_O]) && player.spotlight.narrowness > 2) player.spotlight.narrowness -= 0.5;
 }
 
+
+function controlsPlatformer(acceleration, jumpAcceleration, beamNarrowness, bControlSpotlight) {
+	var player = entities.points[0];
+	// calculate altitude
+	player.altitude = castAltitudeRay(player.index);
+	
+	// initializing jump
+	if (frameCounter === 1) {
+		var secondsOfJumpThrust = 0.1;
+		entities.points[0].maxJumpEnergy = jumpAcceleration * secondsOfJumpThrust * frameRate;
+		entities.points[0].jumpEnergy = entities.points[0].maxJumpEnergy;
+		player.jumpRechargeDelayOnDepletion = 45; // frames after depleting jump energy completely before jump energy begins recharging
+	}
+	
+	// gravity
+	if (platformer.gravity.direction === 'down') player.vy += platformer.gravity.magnitude;
+	if (platformer.gravity.direction === 'up') player.vy -= platformer.gravity.magnitude;
+	if (platformer.gravity.direction === 'right') player.vx += platformer.gravity.magnitude;
+	if (platformer.gravity.direction === 'left') player.vx -= platformer.gravity.magnitude;
+	
+	// movement left handed
+	if (platformer.gravity.direction === 'left' || platformer.gravity.direction === 'right') {
+		if (keysDown[KEY_E]) player.dy -= acceleration;
+		if (keysDown[KEY_D]) player.dy += acceleration;
+	}
+	if (platformer.gravity.direction === 'up' || platformer.gravity.direction === 'down') {
+		if (keysDown[KEY_S]) player.dx -= acceleration;
+		if (keysDown[KEY_F]) player.dx += acceleration;
+	}
+	// movement right handed
+	if (platformer.gravity.direction === 'left' || platformer.gravity.direction === 'right') {
+		if (keysDown[KEY_I]) player.dy -= acceleration;
+		if (keysDown[KEY_K]) player.dy += acceleration;
+	}
+	if (platformer.gravity.direction === 'up' || platformer.gravity.direction === 'down') {
+		if (keysDown[KEY_J]) player.dx -= acceleration;
+		if (keysDown[KEY_L]) player.dx += acceleration;
+	}
+	
+	// jump (jetpack)
+	if (platformer.gravity.direction === 'down') {
+		if ((keysDown[KEY_E] || keysDown[KEY_I]) && player.jumpEnergy > 0) {
+			player.dy -= jumpAcceleration;
+			player.jumpEnergy -= jumpAcceleration;
+		}
+	}
+	if (platformer.gravity.direction === 'up') {
+		if ((keysDown[KEY_D] || keysDown[KEY_K]) && player.jumpEnergy > 0) {
+			player.dy += jumpAcceleration;
+			player.jumpEnergy -= jumpAcceleration;
+		}
+	}
+	if (platformer.gravity.direction === 'left') {
+		if ((keysDown[KEY_F] || keysDown[KEY_L]) && player.jumpEnergy > 0) {
+			player.dx += jumpAcceleration;
+			player.jumpEnergy -= jumpAcceleration;
+		}
+	}
+	if (platformer.gravity.direction === 'right') {
+		if ((keysDown[KEY_S] || keysDown[KEY_J]) && player.jumpEnergy > 0) {
+			player.dx -= jumpAcceleration;
+			player.jumpEnergy -= jumpAcceleration;
+		}
+	}
+	
+	// jump energy management
+	if (player.altitude === 0) player.jumpEnergy = player.maxJumpEnergy;
+	
+	// spotlight control
+	// mouse aims spotlight
+	entities.points[1].x = currentMousePosition.x;
+	entities.points[1].y = currentMousePosition.y;
+	
+	// change spotlight width
+	if ((keysDown[KEY_R] || keysDown[KEY_U]) && player.spotlight.narrowness < 8) player.spotlight.narrowness += 0.25;
+	if ((keysDown[KEY_W] || keysDown[KEY_O]) && player.spotlight.narrowness > 2) player.spotlight.narrowness -= 0.5;
+}

@@ -57,15 +57,17 @@ function wandering(entity, accelerationScale) {
 }
 
 // WRONG, maybe. I think this should just be called "castSpotlight()," since I don't think it relies on any external object that it's updating.
-function castSpotlight(parent, targetIndex, isSoft) {
+function castSpotlight(parent, targetIndex, softness) {
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 
-	var arrayOfTargetIndices = findSpotlightTargets(parent.index, targetIndex, parent.spotlight.narrowness);
+	var arrayOfTargetIndices = findSpotlightTargets(parent, targetIndex);
 
 	for (var i = 0; i < arrayOfTargetIndices.length; i++) {
 		// only draw half of the rays each frame
-		if (frameCounter % 2 === 0 && i % 2 === 0) continue;
-		if (frameCounter % 2 === 1 && i % 2 === 1) continue;
+		//if (frameCounter % 2 === 0 && i % 2 === 0) continue;
+		//if (frameCounter % 2 === 1 && i % 2 === 1) continue;
+		// only using some of the target indices, drawing fewer rays, total
+		//if (i % 3 < 2) continue;
 		
 		// vars
 		var mag = distanceFromIndexToIndex[parent.index][arrayOfTargetIndices[i]], // assigning this as a var so that it only gets looked up once
@@ -79,12 +81,13 @@ function castSpotlight(parent, targetIndex, isSoft) {
 			collided = false,
 			roundedX = currentCoords.x,
 			roundedY = currentCoords.y;
-		while (
+		while ( // for as long as the ray is on the canvas and hasn't collided with something solid
 			currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 			currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
 			!collided
 		) {
-			// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+			// round a version of coords so that they work with the indexOfCoordinates[x][y] lookup table
+			// don't change the original coords, so that the ray's path remains smooth and consistent
 			roundedX = currentCoords.x;
 			roundedY = currentCoords.y;
 			if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
@@ -94,103 +97,58 @@ function castSpotlight(parent, targetIndex, isSoft) {
 			if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
 			if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
 	
-			// checking for collisions
+			// check for collisions
+			var illumination = parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex],
+				diffusionFactor = 1.5; // illumination is divided by this when applied as softness/diffusion
+				impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
 			if (propertiesOfIndex[currentIndex].solid) {
-				pixelArray[currentIndex * 4 + 0] += 127;
-				if (isSoft) {
-					for (var k = 0; k < neighborsOfIndex[currentIndex].length; k++) {
-						pixelArray[neighborsOfIndex[currentIndex][k] * 4 + 0] += 32;
+				// if the ray collides with something solid
+				// light the impacted surface
+				pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
+				if (softness) {
+					// diffuse the impact lighting effect
+					for (var k = 0; k < neighborsOfIndexInRadius[currentIndex][softness].length; k++) {
+						pixelArray[neighborsOfIndexInRadius[currentIndex][softness][k] * 4 + 0] += illumination / diffusionFactor * impactEnhancementScale;
 					}
 				}
-				collided = true;
+				// stop drawing the ray
+				collided = true; // NOTE: it seems like I could just 'return' here and not use the 'collided' var, but just replacing this with 'return' and deleting the 'collided' var didn't work, offhand.
 			} else {
-				// applying lighting
+				// if the ray hasn't collided with something solid
+				// light the ray's path
 				currentIndex = indexOfCoordinates[roundedX][roundedY];
-				pixelArray[currentIndex * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
-				if (isSoft) {
-					for (var j = 0; j < neighborsOfIndex[currentIndex].length; j++) {
-						pixelArray[neighborsOfIndex[currentIndex][j] * 4 + 0] += parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex];
+				pixelArray[currentIndex * 4 + 0] += illumination;
+				if (softness) {
+					// diffuse the brightening effect of the ray
+					for (var j = 0; j < neighborsOfIndexInRadius[currentIndex][softness].length; j++) {
+						pixelArray[neighborsOfIndexInRadius[currentIndex][softness][j] * 4 + 0] += illumination / diffusionFactor;
 					}
 				}
 			}
 
-			// incrementing for next loop
+			// increment the coordinates for next loop
 			currentCoords.x += xStep;
 			currentCoords.y += yStep;
 		}
 	}
 }
 
-function findSpotlightTargets(originIndex, targetIndex, narrowness) {
-	var targetIndices = [];
-	var i = 0; // index counter
+function findSpotlightTargets(parent, targetIndex) {
 	var beamCenterTargetIndex = castRayToPerimeter(
-            originIndex,
-            xDistanceFromIndexToIndex[originIndex][targetIndex],
-            yDistanceFromIndexToIndex[originIndex][targetIndex]
+            parent.index,
+            xDistanceFromIndexToIndex[parent.index][targetIndex],
+            yDistanceFromIndexToIndex[parent.index][targetIndex]
         );
-    for (var beamTargetSearch = 0; beamTargetSearch < perimeterIndices.length; beamTargetSearch++) {
-        var perimIndex = perimeterIndices[beamTargetSearch];
-        if (
-            distanceFromIndexToIndex[perimIndex][beamCenterTargetIndex] <
-            distanceFromIndexToIndex[beamCenterTargetIndex][originIndex] / narrowness
-        ) {
-            targetIndices[i] = perimIndex;
-			i++;
-        }
-    }
-	return targetIndices;
-}
-
-function castRay(originIndex, xMagnitude, yMagnitude, brightness) {
-	// WRONG: see castSpotlight() for fewer vars
-	var currentIndex = originIndex,
-		currentCoords = {
-			'x': coordinatesOfIndex[currentIndex].x,
-			'y': coordinatesOfIndex[currentIndex].y
-		},
-		collided = false,
-		xStep,
-		yStep,
-		mag,
-		absXMag = xMagnitude,
-		absYMag = yMagnitude,
-		roundedX = currentCoords.x,
-		roundedY = currentCoords.y;
-	if (absXMag < 0) absXMag = -absXMag;
-	if (absYMag < 0) absYMag = -absYMag;
-	mag = absXMag + absYMag;
-	xStep = xMagnitude / mag * scaledPixelSize;
-	yStep = yMagnitude / mag * scaledPixelSize;
-	while (
-		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 &&  // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
-		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
-		!collided
-	) {
-		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
-		roundedX = currentCoords.x;
-		roundedY = currentCoords.y;
-		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
-		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
-		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
-		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
-		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
-		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
-
-		// checking for collisions
-		if (propertiesOfIndex[currentIndex].solid) {
-				pixelArray[currentIndex * 4 + 0] += 127;
-				collided = true;
-		} else {
-			// applying lighting
-			currentIndex = indexOfCoordinates[roundedX][roundedY];
-			pixelArray[currentIndex * 4 + 0] += brightness / distanceFromIndexToIndex[originIndex][currentIndex];
-		}
-		
-		// incrementing for next loop
-		currentCoords.x += xStep;
-		currentCoords.y += yStep;
-	}
+	var radius = 60 / parent.spotlight.narrowness * (distanceFromIndexToIndex[parent.index][beamCenterTargetIndex] / maxScreenDistance); // add this to equation somehow: distanceFromIndexToIndex[parent.index][beamCenterTargetIndex]
+	if (radius > maxNeighborRadius) radius = maxNeighborRadius;
+	if (radius < 4) radius = 4;
+	
+	// rounding
+	if (radius % 1 >= 0.5) radius += 1 - radius % 1;
+	if (radius % 1 < 0.5 && radius % 1 > -0.5) radius -= radius % 1;
+	if (radius % 1 <= -0.5) radius -= 1 + radius % 1;
+	
+	return neighborsOfIndexInRadius[beamCenterTargetIndex][radius];
 }
 
 function castRayToPerimeter(originIndex, xMagnitude, yMagnitude) {
@@ -275,71 +233,6 @@ function softPoints(currentIndex, entitiesArray) {
 	return brightness;
 }
 
-function castTargetVector(originIndex, magnitudeX, magnitudeY, minRange, maxRange) {
-	// WARNING: This code is heavily duplicated from castCollisionVector. Maybe reuse the code in one more-adaptable function?
-	var currentIndex = originIndex,
-		absMagX = magnitudeX,
-		absMagY = magnitudeY,
-		mag,
-		currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
-			'x': coordinatesOfIndex[currentIndex].x,
-			'y': coordinatesOfIndex[currentIndex].y
-		},
-		xStep,
-		yStep,
-		absXStep, // used for decrementing the mag as we count down the length we want to draw
-		absYStep,
-		absStepMag,
-		roundedX,
-		roundedY;
-	if (absMagX < 0) absMagX = -absMagX;
-	if (absMagY < 0) absMagY = -absMagY;
-	mag = absMagX + absMagY;
-	if (mag < minRange) mag = minRange;
-	if (mag > maxRange) mag = maxRange;
-	xStep = magnitudeX / mag * scaledPixelSize;
-	yStep = magnitudeY / mag * scaledPixelSize;
-	absXStep = xStep;
-	absYStep = yStep;
-	if (absXStep < 0) absXStep = -absXStep;
-	if (absYStep < 0) absYStep = -absYStep;
-	absStepMag = absXStep + absYStep; // this is always scaledPixelSize, or almost, but I think I want to calculate it in case something else changes
-	if (absStepMag < scaledPixelSize * 0.5) {
-		return currentIndex;
-	}
-	while (
-		mag > 0 &&
-		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
-		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
-	) {
-		// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
-		roundedX = currentCoords.x;
-		roundedY = currentCoords.y;
-		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
-		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
-		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
-		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
-		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
-		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
-		
-		currentIndex = indexOfCoordinates[roundedX][roundedY];
-		
-		// draw the vector
-		pixelArray[currentIndex * 4 + 2] = 0;
-		
-		// collision
-		if (propertiesOfIndex[currentIndex].solid) return currentIndex;
-		
-		// counting down how long we want to draw, "using up the vector's magnitude"
-		mag -= absStepMag;
-		
-		// incrementing the coordinates for next loop
-		currentCoords.x += xStep;
-		currentCoords.y += yStep;
-	}
-	return currentIndex;
-}
-
 function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 	// WRONG to slide along surfaces, we'll need to return something other than just an index
 	var currentIndex = originIndex,
@@ -405,6 +298,41 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 		currentCoords.y += yStep;
 	}
 	return null;
+}
+
+function castAltitudeRay(originIndex) {
+	var currentIndex = originIndex,
+		currentCoords = {
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		xStep = 0,
+		yStep = 0;
+	if (platformer.gravity.direction === 'down') yStep = scaledPixelSize;
+	if (platformer.gravity.direction === 'up') yStep = -scaledPixelSize;
+	if (platformer.gravity.direction === 'left') xStep = -scaledPixelSize;
+	if (platformer.gravity.direction === 'right') xStep = scaledPixelSize;
+	while (
+		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
+	) {
+		currentIndex = indexOfCoordinates[currentCoords.x][currentCoords.y];
+		
+		// draw the vector
+		//pixelArray[currentIndex * 4 + 2] = 0;
+		
+		// collision
+		if (propertiesOfIndex[currentIndex].solid) {
+			var altitude = distanceFromIndexToIndex[currentIndex][originIndex] / scaledPixelSize;
+			if (altitude < 0) altitude = -altitude;
+			return altitude - 1;
+		}
+		
+		// incrementing the coordinates for next loop
+		currentCoords.x += xStep;
+		currentCoords.y += yStep;
+	}
+	return 'over abyss'; // WRONG this might cause problems
 }
 
 function updateEntities(entitiesArray) {

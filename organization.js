@@ -5,17 +5,20 @@ var distanceFromIndexToIndex = [],
 	absYDistanceFromIndexToIndex = [],
 	coordinatesOfIndex = [],
 	indexOfCoordinates = [],
-	neighborsOfIndex = [],
+	neighborsOfIndexInRadius = [],
 	propertiesOfIndex = [],
 	perimeterIndices = [],
+	//perimeterNeighborsInRadiusOfPerimeterIndex = []; // not real yet
 	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow,
+	maxNeighborRadius = 24, // used by neighborsOfIndexInRadius[index][radius]. Too big will make the program hangup indefinitely during initialization.
 	maxScreenDistance;
 
 initializeDistanceLookupTables();
+maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
 initializeCoordinatesLookupTables();
 initializeMisc();
 
-maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
+
 
 initializeEntities(); // this has to happen after indexOfCoordinates[][] is initialized.
 
@@ -25,9 +28,10 @@ initializeEntities(); // this has to happen after indexOfCoordinates[][] is init
 // misc. initialization
 
 function initializeMisc() {
-	initializeNeighborsOfIndex();
+	initializeNeighborsOfIndexInRadius();
 	initializePropertiesOfIndex();
 	initializePerimeterIndices();
+	//initializePerimeterNeighborsInRadiusOfPerimeterIndex(); // not real yet
 }
 
 function initializePerimeterIndices() {
@@ -43,12 +47,18 @@ function initializePerimeterIndices() {
 	}
 }
 
-function initializeNeighborsOfIndex() {
-	var neighborRadius = 1; // any cell within this radius (in cells) will be considered a neighbor
-	for (var i = 0; i < pixelsPerGrid; i++) {
-		neighborsOfIndex.push([]);
-		for (var j = 0; j < pixelsPerGrid; j++) {
-			if (distanceFromIndexToIndex[i][j] < scaledPixelSize * (neighborRadius + 0.4)) neighborsOfIndex[i].push(j);
+function initializeNeighborsOfIndexInRadius() {
+	// WARNING This only accepts radii of up to 24 cells
+	// WARNING this receives number of cells, not canvas pixel distances
+	// structure: indexOfNeighborsInRadius[centerIndex][radius][array of indices in radius from centerIndex]
+	maxCellDistance = maxScreenDistance / scaledPixelSize;
+	for (var i = 0; i < pixelsPerGrid; i++) { // i is the center index
+		neighborsOfIndexInRadius.push([]);
+		for (var j = 0; j <= maxNeighborRadius; j++) { // j is the radius
+			neighborsOfIndexInRadius[i].push([]);
+			for (var k = 0; k < pixelsPerGrid; k++) { // k is the neighbor withing j radius of i
+				if (distanceFromIndexToIndex[i][k] <= scaledPixelSize * j) neighborsOfIndexInRadius[i][j].push(k);
+			}
 		}
 	}
 }

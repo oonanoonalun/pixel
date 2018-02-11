@@ -2,8 +2,10 @@ var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
 
-// WRONG just testing. Sort of not wrong, but shouldn't be a global var. Should be an array on the spotlight attached to an origin entity.
-var beamTargets = [entities.points[1].index];
+// TEMPORARY maybe should make this "official" and include it in initializePerimeterIndices()
+for (var i = 0; i < perimeterIndices.length; i++) {
+    propertiesOfIndex[perimeterIndices[i]].perimeter = true;
+}
 
 function mainLoop() {
     // updating mouse position
@@ -13,12 +15,13 @@ function mainLoop() {
     //      Maybe ask Chris about this.
     
     // player controls
-    controls(4, entities.points[0].spotlight.narrowness, true);
+    //controls(4, entities.points[0].spotlight.narrowness);
+    controlsPlatformer(4, 12, entities.points[0].spotlight.narrowness);
     
     // player spotlight
-    castSpotlight(entities.points[0], entities.points[1].index, true);
+    castSpotlight(entities.points[0], entities.points[1].index, 0);
     
-    // updating entity position, speed, acceleration, nearest index, and child positions
+    // updating entity position, speed, acceleration, collision, nearest index, and child position
     updateEntities(entities.all);   
     
     // mouse position is controlling entities.points[1]
@@ -39,8 +42,8 @@ function mainLoop() {
     patrol(
         entities.points[2],
         [
-            {index: 2400},
-            {index: 2479}
+            {index: 39},
+            {index: 4759}
         ],
         0.1
     );
@@ -77,9 +80,11 @@ function mainLoop() {
         
         
         // Creating a solid block that can be moved, centered on entities.points[2]
+        // WRONG Wiping .solid property of everything else
         if (
-            absXDistanceFromIndexToIndex[i][entities.points[2].index] < 75 &&
-            absYDistanceFromIndexToIndex[i][entities.points[2].index] < 75
+            (absXDistanceFromIndexToIndex[i][entities.points[2].index] < 75 &&
+            absYDistanceFromIndexToIndex[i][entities.points[2].index] < 75) ||
+            propertiesOfIndex[i].perimeter === true
         ) {
             propertiesOfIndex[i].solid = true;
         } else {
@@ -98,34 +103,43 @@ function mainLoop() {
             }
         }*/
         
-        // apply sum brightness to pixel
-        if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 20;
-        
         // blend
-        var neighborsBrightness = 0;
-        for (var k = 0; k < neighborsOfIndex[i].length; k ++) {
-            neighborsBrightness += pixelArray[neighborsOfIndex[i][k] * 4 + 0];
+        screenFxBlend = true;
+        if (screenFxBlend) {
+            // NOTE: neighbors' influence is NOT weighted by distance
+            var neighborsBrightness = 0,
+                blendRadius = 2; // in cells
+            for (var k = 0; k < neighborsOfIndexInRadius[i][blendRadius].length; k ++) {
+                neighborsBrightness += pixelArray[neighborsOfIndexInRadius[i][blendRadius][k] * 4 + 0];
+            }
+            neighborsBrightness /= neighborsOfIndexInRadius[i][blendRadius].length + 1;
+            //if (i === centerIndex && frameCounter % 15 === 0) console.log('brightness before blending', brightness.toFixed(0));
+            brightness += neighborsBrightness;
+            //if (i === centerIndex && frameCounter % 15 === 0) console.log('brightness after blending', brightness.toFixed(0));
         }
-        neighborsBrightness /= neighborsOfIndex[i].length + 1;
-        brightness += neighborsBrightness;
+        
+        // apply sum brightness to pixel
+        if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 5;
         
         
         // brightness decay
-        // WRONG, maybe. The logarithmic decay might not look as good as the linear one.
-        pixelArray[i * 4 + 0] *= 0.82; // -= 3 is a nice decay rate for a solid afterimage. 0.88 is good if going logarithmic, 0.75 is ok for something steeper.
-        pixelArray[i * 4 + 1] *= 0.92;
-        if (pixelArray[i * 4 + 2] > 48) pixelArray[i * 4 + 2] *= 0.92;
-        if (pixelArray[i * 4 + 2] < 48) pixelArray[i * 4 + 2] = 48;
-        //pixelArray[i * 4 + 2] -= 2;
+        var brightnessDecayScale = 0.82; // brightness is this amount of its value last frame
+        pixelArray[i * 4 + 0] *= brightnessDecayScale;
         
-        // greyscale
-        // top way is just a different way to the same thing as the single line with two '=' in it. I just wonder if the two '=' creates a weird connection among vars that I don't want to deal with.
-        /*var red = pixelArray[i + 4 + 0];
-        pixelArray[i * 4 + 1] = red;
-        pixelArray[i * 4 + 2] = red;*/
-            // simpler greyscale expression
-        pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
+        // color or greyscale
+        var screenFxGreyscale = true;
+        if (!screenFxGreyscale) { // color
+            var screenBlueBase = 48;
+            pixelArray[i * 4 + 1] *= brightnessDecayScale;
+            if (pixelArray[i * 4 + 2] > screenBlueBase) pixelArray[i * 4 + 2] *= brightnessDecayScale;
+            if (pixelArray[i * 4 + 2] < screenBlueBase) pixelArray[i * 4 + 2] = screenBlueBase;
+        } else { // greyscale
+            pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
+        }
         
+        // draw everything .solid in green
+        //if (propertiesOfIndex[i].solid === true) pixelArray[i * 4 + 1] = 255;
+
         // this creature a really cool, if somewhat static, effect that I don't understand.
         // shoot, it's not doing it anymore [head scratching]
         //pixelArray[1 * 4 + 0] -= (entities.points[0].vy + entities.points[0].vy) * 100 / distanceFromIndexToIndex[i][entities.points[0].index];
@@ -144,13 +158,23 @@ function mainLoop() {
         if (i % (entities.points[0].dx * 5) < entities.points[0].dy * 4) pixelArray[i * 4 + 1] += 5;
         if (i % (entities.points[0].dy * 7) < entities.points[0].dx * 5) pixelArray[i * 4 + 2] += 10;*/
         
-        
+        // scaling some colors based on other colors
         //pixelArray[i * 4 + 0] += pixelArray[i * 4 + 1] * 0.2;
         //pixelArray[i * 4 + 0] += pixelArray[i * 4 + 2] * 0.2;
         
         //drawing some stuff in color, after greyscaling
         // drawing entities.points[1]
         //if (i === entities.points[1].index) pixelArray[i * 4 + 1] = 255; 
+        
+        // wallpapers
+        //if (i % 37 < 21 && i % 16 > 9) pixelArray[i * 4 + 1] -= 64;
+        /*if (i % 16 < 3) {
+            if (xDistanceFromIndexToIndex[i][entities.points[2].index] % 19 < 7) {
+                pixelArray[i * 4 + 0] += entities.points[2].y / 35;
+            } else {
+                pixelArray[i * 4 + 0] += frameCounter % 32 - (entities.points[0].vx + entities.points[1].vy);
+            }
+        }*/
         
         // equalize
         //if (pixelArray[i * 4 + 0] < 127) pixelArray[i * 4 + 0] += 5;
@@ -163,6 +187,6 @@ function mainLoop() {
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
     context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
-    countFps(5, 30);    
+    //countFps(5, 30);    
     frameCounter++;
 }

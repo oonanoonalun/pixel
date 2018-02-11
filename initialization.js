@@ -13,6 +13,12 @@ var canvas = $('canvas')[0],
 	effects = {
 		'snow': {}
 	},
+	platformer = {
+		'gravity': {
+			'direction': 'down', // valid entries are 'up', 'down', 'left', and 'right'
+			'magnitude': 1
+		}
+	},
 	frameCounter = 1;
 
 initializeRGBAChannels();
