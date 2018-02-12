@@ -169,29 +169,29 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 			//		return the coordinate it should use on that axis instead of applying its speed to that axis of its position.
 			if (direction === 'down') {
 				originEntity.altitude.down = altitude - 1;
-				// if, next frame, the entity will be below the center of the last clear cell before the altitude ray collided
-				if (originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y) {
+				// if, next frame, the entity will be below the upper edge of the last clear cell before the altitude ray collided
+				if (originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y - scaledPixelSize / 2) {
 					return coordinatesOfIndex[previousIndex].y;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'up') {
 				originEntity.altitude.up = altitude - 1;
-				// if, next frame, the entity will be above the center of the last clear cell before the altitude ray collided
-				if (originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y) {
+				// if, next frame, the entity will be above the lower edge of the last clear cell before the altitude ray collided (checking the near edge rather than center keeps you from being rounded into a solid block, maybe, or something? I was using the center, but a couple times I got lodged in the corner of a solid box. Not sure if this was really the problem.))
+				if (originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y + scaledPixelSize / 2) {
 					return coordinatesOfIndex[previousIndex].y;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'left') {
 				originEntity.altitude.left = altitude - 1;
-				// if, next frame, the entity will be to the left of the center of the last clear cell before the altitude ray collided
-				if (originEntity.x + originEntity.vx < coordinatesOfIndex[previousIndex].x) {
+				// if, next frame, the entity will be to the left of the right edge of the last clear cell before the altitude ray collided
+				if (originEntity.x + originEntity.vx < coordinatesOfIndex[previousIndex].x + scaledPixelSize / 2) {
 					return coordinatesOfIndex[previousIndex].x;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'right') {
 				originEntity.altitude.right = altitude - 1;
-				// if, next frame, the entity will be to the right of the center of the last clear cell before the altitude ray collided
-				if (originEntity.x + originEntity.vx > coordinatesOfIndex[previousIndex].x) {
+				// if, next frame, the entity will be to the right of the left edge of the last clear cell before the altitude ray collided
+				if (originEntity.x + originEntity.vx > coordinatesOfIndex[previousIndex].x - scaledPixelSize / 2) {
 					return coordinatesOfIndex[previousIndex].x;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
