@@ -111,16 +111,16 @@ function controls(acceleration, beamNarrowness, bControlSpotlight) {
 
 function controlsPlatformer(acceleration, jumpAcceleration, beamNarrowness, bControlSpotlight) {
 	var player = entities.points[0];
-	// calculate altitude
-	player.altitude = castAltitudeRay(player.index);
 	
 	// initializing jump
 	if (frameCounter === 1) {
-		var secondsOfJumpThrust = 0.1;
-		entities.points[0].maxJumpEnergy = jumpAcceleration * secondsOfJumpThrust * frameRate;
+		var framesOfJumpThrust = 3;
+		entities.points[0].maxJumpEnergy = jumpAcceleration * framesOfJumpThrust;
 		entities.points[0].jumpEnergy = entities.points[0].maxJumpEnergy;
 		player.jumpRechargeDelayOnDepletion = 45; // frames after depleting jump energy completely before jump energy begins recharging
 	}
+	
+	// WRONG: Should just have one check for each direction and put all the direction-specific controls in that code block.
 	
 	// gravity
 	if (platformer.gravity.direction === 'down') player.vy += platformer.gravity.magnitude;
@@ -149,32 +149,33 @@ function controlsPlatformer(acceleration, jumpAcceleration, beamNarrowness, bCon
 	
 	// jump (jetpack)
 	if (platformer.gravity.direction === 'down') {
+		if (player.altitude.down === 0) player.jumpEnergy = player.maxJumpEnergy;
 		if ((keysDown[KEY_E] || keysDown[KEY_I]) && player.jumpEnergy > 0) {
 			player.dy -= jumpAcceleration;
 			player.jumpEnergy -= jumpAcceleration;
 		}
 	}
 	if (platformer.gravity.direction === 'up') {
+		if (player.altitude.up === 0) player.jumpEnergy = player.maxJumpEnergy;
 		if ((keysDown[KEY_D] || keysDown[KEY_K]) && player.jumpEnergy > 0) {
 			player.dy += jumpAcceleration;
 			player.jumpEnergy -= jumpAcceleration;
 		}
 	}
 	if (platformer.gravity.direction === 'left') {
+		if (player.altitude.left === 0) player.jumpEnergy = player.maxJumpEnergy;
 		if ((keysDown[KEY_F] || keysDown[KEY_L]) && player.jumpEnergy > 0) {
 			player.dx += jumpAcceleration;
 			player.jumpEnergy -= jumpAcceleration;
 		}
 	}
 	if (platformer.gravity.direction === 'right') {
+		if (player.altitude.right === 0) player.jumpEnergy = player.maxJumpEnergy;
 		if ((keysDown[KEY_S] || keysDown[KEY_J]) && player.jumpEnergy > 0) {
 			player.dx -= jumpAcceleration;
 			player.jumpEnergy -= jumpAcceleration;
 		}
 	}
-	
-	// jump energy management
-	if (player.altitude === 0) player.jumpEnergy = player.maxJumpEnergy;
 	
 	if (bControlSpotlight) {
 		// spotlight control

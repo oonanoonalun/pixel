@@ -6,15 +6,25 @@ function mainLoop() {
     // TEMP generate ad-hoc platforming map
     if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
         for (var mg = 0; mg < pixelsPerGrid; mg++) { // i.e. 'mg' = map generation
+            // clear old daya
             propertiesOfIndex[mg].plat = false;
             propertiesOfIndex[mg].solid = false;
+            // higher chance of being solid if cell to left is a platform
             if (mg - 1 >= 0 && propertiesOfIndex[mg - 1].plat) {
                 if (Math.random() < 0.75) propertiesOfIndex[mg].plat = true;
             }
+            // if cell to left is empty, small chance of being a platform
             else if (Math.random() < 0.005) {
                 propertiesOfIndex[mg].plat = true;
             }
+            // solid perimeter
             if (propertiesOfIndex[mg].perimeter) propertiesOfIndex[mg].solid = true;
+            // block at bottom center
+            if (
+                coordinatesOfIndex[mg].x > 350 &&
+                coordinatesOfIndex[mg].x < 450 &&
+                coordinatesOfIndex[mg].y > 700
+            ) propertiesOfIndex[mg].plat = true;
         }
     }
     // updating mouse position
@@ -23,15 +33,16 @@ function mainLoop() {
     //      the entities are in two arrays (entities.lines/point and entitiies.all);
     //      Maybe ask Chris about this.
     
-    // player controls
-    //controls(4, entities.points[0].spotlight.narrowness);
-    controlsPlatformer(2, 12, entities.points[0].spotlight.narrowness, false);
     
     // player spotlight
     //castSpotlight(entities.points[0], entities.points[1].index, 0);
     
     // updating entity position, speed, acceleration, collision, nearest index, and child position
-    updateEntities(entities.all);   
+    updateEntities(entities.all);
+    
+    // player controls
+    //controls(4, entities.points[0].spotlight.narrowness);
+    controlsPlatformer(2, 12, entities.points[0].spotlight.narrowness, false);
     
     // mouse position is controlling entities.points[1]
     //entities.points[1].x = currentMousePosition.x;
@@ -65,7 +76,7 @@ function mainLoop() {
     entities.points[2].vy -= 3; // light tries to stay high
     wandering(entities.points[1], 2);
     //entities.points[1].x = entities.points[2].x; // target stays directly under spotlight
-    entities.points[1].y = coordinatesOfIndex[4720].y; // target point stays on the bottom row
+    entities.points[1].y = coordinatesOfIndex[pixelsPerGrid + 1 - pixelsPerRow].y; // target point stays on the bottom row
     
     
     /*patrol(
@@ -100,7 +111,7 @@ function mainLoop() {
         // blend
         screenFxBlend = true;
         if (screenFxBlend) {
-            // NOTE: neighbors' influence is NOT weighted by distance
+            // NOTE: neighbors' influence is NOT weighted by distance, but wouldn't be to hard to
             var neighborsBrightness = 0,
                 blendRadius = 2; // in cells
             for (var k = 0; k < neighborsOfIndexInRadius[i][blendRadius].length; k ++) {
@@ -127,7 +138,7 @@ function mainLoop() {
         if (propertiesOfIndex[i].solid) pixelArray[i * 4 + 2] = 255;
         
         // brightness decay
-        var brightnessDecayScale = 0.82; // brightness is this amount of its value last frame
+        var brightnessDecayScale = 0.92;//0.82; // brightness is this amount of its value last frame
         pixelArray[i * 4 + 0] *= brightnessDecayScale;
         
         // color or greyscale

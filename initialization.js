@@ -11,7 +11,8 @@ var canvas = $('canvas')[0],
 		'all': []
 	},
 	effects = {
-		'snow': {}
+		'snow': {},
+		'snowflakes': []
 	},
 	platformer = {
 		'gravity': {
@@ -39,6 +40,12 @@ function initializeEntities() {
 			'vy': 0,
 			'maxAcceleration': 5,
 			'maxSpeed': 25,
+			'altitude': {
+				'up': null,
+				'down': null,
+				'left': null,
+				'right': null
+			},
 			'brightness': 256,
 			'type': 'point',
 			'target': null,	// WRONG, maybe. Doesn't need to be initialized? Same for lines.
