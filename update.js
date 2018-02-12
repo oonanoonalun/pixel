@@ -6,7 +6,10 @@ function updateEntities(entitiesArray) {
 	// 		nearest array index stored on entity object
 	for (var i = 0; i < entitiesArray.length; i++) {
 		var entity = entitiesArray[i],
-			collision = null;
+			collisionUp = null,
+			collisionDown = null,
+			collisionLeft = null,
+			collisionRight = null;
 		
 		// gravity
 		// will maybe do gravity here. For now it's just for the player in input.js.
@@ -41,21 +44,30 @@ function updateEntities(entitiesArray) {
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
 		// friction applied to speed
-		if (entity === entities.points[0].altitude && entities.points[0].altitude === 0) {
+		var friction = 0.9;
+		if (
+			(platformer.gravity.direction === 'down' && entities.points[0].altitude.down === 0) ||
+			(platformer.gravity.direction === 'up' && entities.points[0].altitude.up === 0) ||
+			(platformer.gravity.direction === 'left' && entities.points[0].altitude.left === 0) ||
+			(platformer.gravity.direction === 'right' && entities.points[0].altitude.right === 0)
+		) {
 			// friction higher when grounded
-			entity.vx *= 0.6;
-			entity.vy *= 0.6;
+			friction = 0.6;
 		} else {
-			entity.vx *= 0.9;
-			entity.vy *= 0.9;
+			friction = 0.9;
 		}
+		// logging player friction
+		//if (entity === entities.points[0] && frameCounter % 15 === 0) console.log(friction);
+		entity.vx *= friction;
+		entity.vy *= friction;
 		
 		// check for collisions next frame
-		if (!entity.noCollision) collision = castCollisionVector(entity.index, entity.vx, entity.vy);
-		var collisionUp = castAltitudeAndCollisionOrthogonalRay(entity, 'up');
-		var collisionDown = castAltitudeAndCollisionOrthogonalRay(entity, 'down');
-		var collisionLeft = castAltitudeAndCollisionOrthogonalRay(entity, 'left');
-		var collisionRight = castAltitudeAndCollisionOrthogonalRay(entity, 'right');
+		if (!entity.noCollision) {
+			collisionUp = castAltitudeAndCollisionOrthogonalRay(entity, 'up');
+			collisionDown = castAltitudeAndCollisionOrthogonalRay(entity, 'down');
+			collisionLeft = castAltitudeAndCollisionOrthogonalRay(entity, 'left');
+			collisionRight = castAltitudeAndCollisionOrthogonalRay(entity, 'right');
+		}
 		/*if (entity === entities.points[0] && frameCounter % 15 === 0) {
 			console.log('collision udlr:', collisionUp, collisionDown, collisionLeft, collisionRight);
 			console.log('altitude udlr:', entity.altitude.up, entity.altitude.down, entity.altitude.left, entity.altitude.right);

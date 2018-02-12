@@ -6,6 +6,10 @@ var canvas = $('canvas')[0],
 	scaledPixelSize = canvas.width / pixelsPerRow,
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),
 	pixelArray = imageData.data,
+	map = {
+		'platIndices': [], // i.e. indices that should be platforms, and have the .plat property be 'true'	
+		'solidIndices': [] // i.e. indices that should be permanent platforms, with .solid and .notLightSensitive set to 'true'
+	},
 	entities = {
 		'points': [],
 		'all': []
@@ -16,7 +20,7 @@ var canvas = $('canvas')[0],
 	},
 	platformer = {
 		'gravity': {
-			'direction': 'down', // valid entries are 'up', 'down', 'left', and 'right'
+			'direction': 'right', // valid entries are 'up', 'down', 'left', and 'right'
 			'magnitude': 1
 		}
 	},

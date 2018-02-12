@@ -114,8 +114,8 @@ function controlsPlatformer(acceleration, jumpAcceleration, beamNarrowness, bCon
 	
 	// initializing jump
 	if (frameCounter === 1) {
-		var framesOfJumpThrust = 3;
-		entities.points[0].maxJumpEnergy = jumpAcceleration * framesOfJumpThrust;
+		player.framesOfJumpThrust = 6;
+		entities.points[0].maxJumpEnergy = jumpAcceleration * player.framesOfJumpThrust;
 		entities.points[0].jumpEnergy = entities.points[0].maxJumpEnergy;
 		player.jumpRechargeDelayOnDepletion = 45; // frames after depleting jump energy completely before jump energy begins recharging
 	}
@@ -138,13 +138,26 @@ function controlsPlatformer(acceleration, jumpAcceleration, beamNarrowness, bCon
 		if (keysDown[KEY_F]) player.dx += acceleration;
 	}
 	// movement right handed
-	if (platformer.gravity.direction === 'left' || platformer.gravity.direction === 'right') {
+	/*if (platformer.gravity.direction === 'left' || platformer.gravity.direction === 'right') {
 		if (keysDown[KEY_I]) player.dy -= acceleration;
 		if (keysDown[KEY_K]) player.dy += acceleration;
 	}
 	if (platformer.gravity.direction === 'up' || platformer.gravity.direction === 'down') {
 		if (keysDown[KEY_J]) player.dx -= acceleration;
 		if (keysDown[KEY_L]) player.dx += acceleration;
+	}*/
+	// changing gravity direction with right hand
+	if (platformer.gravity.direction !== 'up') {
+		if (keysDown[KEY_I]) platformer.gravity.direction = 'up';
+	}
+	if (platformer.gravity.direction !== 'down') {
+		if (keysDown[KEY_K]) platformer.gravity.direction = 'down';
+	}
+	if (platformer.gravity.direction !== 'left') {
+		if (keysDown[KEY_J]) platformer.gravity.direction = 'left';
+	}
+	if (platformer.gravity.direction !== 'right') {
+		if (keysDown[KEY_L]) platformer.gravity.direction = 'right';
 	}
 	
 	// jump (jetpack)

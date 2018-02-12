@@ -3,38 +3,6 @@ var frameRate = 30;
 setInterval(mainLoop, 1000 / frameRate);
     
 function mainLoop() {
-    // TEMP generate ad-hoc platforming map
-    // WRONG maybe could/should just put this in the loop-over-every-pixel part of the main loop and replace 'mg' with 'i.'
-    // WRONG maybe shouldn't clear and reassign .solid and .plat properties each frame?
-    if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
-        for (var mg = 0; mg < pixelsPerGrid; mg++) { // i.e. 'mg' = map generation
-            // clear old data
-            propertiesOfIndex[mg].plat = false;
-            propertiesOfIndex[mg].solid = false;
-            // high chance of being solid if cell to left is a platform
-            /*if (mg - 1 >= 0 && propertiesOfIndex[mg - 1].plat) {
-                if (Math.random() < 0.75) propertiesOfIndex[mg].plat = true;
-            }
-            // small chance of being a platform if cell to the left isn't one
-            else if (Math.random() < 0.005) {
-                propertiesOfIndex[mg].plat = true;
-            }*/
-            // solid perimeter
-            if (propertiesOfIndex[mg].perimeter) {
-                propertiesOfIndex[mg].solid = true;
-                propertiesOfIndex[mg].notLightSensitive = true;
-            }
-            // permanently solid blocks
-            if (
-                coordinatesOfIndex[mg].x > 350 &&
-                coordinatesOfIndex[mg].x < 450 &&
-                coordinatesOfIndex[mg].y > 500
-            ) {
-                propertiesOfIndex[mg].solid = true;
-                propertiesOfIndex[mg].notLightSensitive = true;
-            }
-        }
-    }
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -50,7 +18,7 @@ function mainLoop() {
     
     // player controls
     //controls(4, entities.points[0].spotlight.narrowness);
-    controlsPlatformer(2, 12, entities.points[0].spotlight.narrowness, false);
+    controlsPlatformer(1, 6, entities.points[0].spotlight.narrowness, false);
     
     // mouse position is controlling entities.points[1]
     //entities.points[1].x = currentMousePosition.x;
@@ -83,6 +51,7 @@ function mainLoop() {
     castSpotlight(entities.points[2], entities.points[1].index, 0);
     entities.points[2].vy -= 3; // light tries to stay high
     wandering(entities.points[1], 2);
+    //chasing(entities.points[1], entities.points[0], 1);
     //entities.points[1].x = entities.points[2].x; // target stays directly under spotlight
     entities.points[1].y = coordinatesOfIndex[pixelsPerGrid + 1 - pixelsPerRow].y; // target point stays on the bottom row
     
@@ -101,8 +70,59 @@ function mainLoop() {
     );*/
     //wandering(entities.points[0], 1);
     
+    // TEMP/WRONG, maybe
+    // clear the map's array of indices that should be platforms
+    map.platIndices = [];
+    map.solidIndices = [];
     // looping over each pixel
     for (var i = 0; i < pixelsPerGrid; i++) {
+        // TEMP generate ad-hoc platforming map
+        // WRONG maybe shouldn't clear and reassign .solid and .plat properties each frame?
+
+        if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
+            // clear old data
+            propertiesOfIndex[i].plat = false;
+            propertiesOfIndex[i].solid = false;
+            // making some blocks
+            var blockWidth = 7,
+                blockHeight = 7;
+            // WRONG .push() function calls and Math.random()
+            if (Math.random() < 0.005) {
+                var isPermanentlySolid = false;
+                if (Math.random() < 0.3) isPermanentlySolid = true;
+                for (var bw = 0; bw < blockWidth; bw++) {
+                    for (var bh = 0; bh < blockHeight; bh++) {
+                        if (i + bh * pixelsPerRow < pixelsPerGrid) {
+                            if (!isPermanentlySolid) map.platIndices.push(i + bw + bh * pixelsPerRow);
+                            else map.solidIndices.push(i + bw + bh * pixelsPerRow);
+                        }
+                    }
+                }
+            }
+            for (var pi = 0; pi < map.platIndices.length; pi++) { // i.e. = platform index
+                if (i === map.platIndices[pi]) propertiesOfIndex[i].plat = true;
+            }
+            for (var si = 0; si < map.solidIndices.length; si++) { // i.e. = solid index
+                if (i === map.solidIndices[si]) propertiesOfIndex[i].solid = true;
+                if (i === map.solidIndices[si]) propertiesOfIndex[i].notLightSensitive = true;
+            }
+            // solid perimeter
+            if (propertiesOfIndex[i].perimeter) {
+                propertiesOfIndex[i].solid = true;
+                propertiesOfIndex[i].notLightSensitive = true;
+            }
+            // permanently solid blocks
+            if (
+                coordinatesOfIndex[i].x > 350 &&
+                coordinatesOfIndex[i].x < 450 &&
+                coordinatesOfIndex[i].y > 500
+            ) {
+                propertiesOfIndex[i].solid = true;
+                propertiesOfIndex[i].notLightSensitive = true;
+            }
+            // BROKEN Not working to clear space around player, but not worth fussing with right now
+            if (distanceFromIndexToIndex[entities.points[0].index][i] < 100) propertiesOfIndex.solid = false;
+        }
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
  
