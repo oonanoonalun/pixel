@@ -142,61 +142,11 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 			'y': originEntity.y
 		},
 		xStep = 0,
-		yStep = 0,
-		roundedX = originEntity.x,
-		roundedY = originEntity.y,
-		roundedXPlusVX = originEntity.x + originEntity.vx,
-		roundedYPlusVY = originEntity.y + originEntity.vy,
-		nextFrameIndex; // this is the index the entity would be in next frame if it maintained its speed in the ray's
-						//		direction and didn't move on the other axis. Checked against the altitude check's collision index
-						//		to see if the entity would collide next frame in this direction.
-	
-	// rounding for indexOfCoordinates[][]
-	if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
-	if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
-	if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
-	if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
-	if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
-	if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
-	if (roundedXPlusVX % 1 >= 0.5) roundedXPlusVX += 1 - roundedXPlusVX % 1;
-	if (roundedXPlusVX % 1 < 0.5 && roundedXPlusVX % 1 > -0.5) roundedXPlusVX -= roundedXPlusVX % 1;
-	if (roundedXPlusVX % 1 <= -0.5) roundedXPlusVX -= 1 + roundedXPlusVX % 1;
-	if (roundedYPlusVY % 1 >= 0.5) roundedYPlusVY += 1 - roundedYPlusVY % 1;
-	if (roundedYPlusVY % 1 < 0.5 && roundedYPlusVY % 1 > -0.5) roundedYPlusVY -= roundedYPlusVY % 1;
-	if (roundedYPlusVY % 1 <= -0.5) roundedYPlusVY -= 1 + roundedYPlusVY % 1;
-	
-	if (direction === 'down') {
-		yStep = scaledPixelSize;
-		if (
-			indexOfCoordinates[roundedX] &&
-			indexOfCoordinates[roundedX][roundedYPlusVY]
-		) nextFrameIndex = indexOfCoordinates[roundedX][roundedYPlusVY];
-		else nextFrameIndex = null;
-	}
-	if (direction === 'up') {
-		yStep = -scaledPixelSize;
-		if (
-			indexOfCoordinates[roundedX] &&
-			indexOfCoordinates[roundedX][roundedYPlusVY]
-		) nextFrameIndex = indexOfCoordinates[roundedX][roundedYPlusVY];
-		else nextFrameIndex = null;
-	}
-	if (direction === 'left') {
-		xStep = -scaledPixelSize;
-		if (
-			indexOfCoordinates[roundedXPlusVX] &&
-			indexOfCoordinates[roundedXPlusVX][roundedY] 
-		) nextFrameIndex = indexOfCoordinates[roundedXPlusVX][roundedY];
-		else nextFrameIndex = null;
-	}
-	if (direction === 'right') {
-		xStep = scaledPixelSize;
-		if (
-			indexOfCoordinates[roundedXPlusVX] &&
-			indexOfCoordinates[roundedXPlusVX][roundedY]
-		) nextFrameIndex = indexOfCoordinates[roundedXPlusVX][roundedY];
-		else nextFrameIndex = null;
-	}
+		yStep = 0;
+	if (direction === 'down') yStep = scaledPixelSize;
+	if (direction === 'up') yStep = -scaledPixelSize;
+	if (direction === 'left') xStep = -scaledPixelSize;
+	if (direction === 'right') xStep = scaledPixelSize;
 	// while the ray is still on the canvas
 	while (
 		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
@@ -212,27 +162,38 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
 			if (altitude < 0) altitude = -altitude;
 			// NOTE: could I avoid these 'if' checks for something I already checked for?
-			//		The only thing I can think aof is to duplicate the whole 'while' loop inside the initial
+			//		The only thing I can think of is to duplicate the whole 'while' loop inside the initial
 			//		'if' checks for direction.
+			// For each direction, compelete the ray till it collides and set the entity's altitude in that direction.
+			//		Then check if the entity will collide in the direction next frame, and, if it will,
+			//		return the coordinate it should use on that axis instead of applying its speed to that axis of its position.
 			if (direction === 'down') {
 				originEntity.altitude.down = altitude - 1;
-				if (nextFrameIndex === currentIndex || !nextFrameIndex) return coordinatesOfIndex[previousIndex].y;
-				else return null;
+				// if, next frame, the entity will be below the center of the last clear cell before the altitude ray collided
+				if (originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y) {
+					return coordinatesOfIndex[previousIndex].y;
+				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'up') {
 				originEntity.altitude.up = altitude - 1;
-				if (nextFrameIndex === currentIndex || !nextFrameIndex) return coordinatesOfIndex[previousIndex].y;
-				else return null;
+				// if, next frame, the entity will be above the center of the last clear cell before the altitude ray collided
+				if (originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y) {
+					return coordinatesOfIndex[previousIndex].y;
+				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'left') {
 				originEntity.altitude.left = altitude - 1;
-				if (nextFrameIndex === currentIndex || !nextFrameIndex) return coordinatesOfIndex[previousIndex].x;
-				else return null;
+				// if, next frame, the entity will be to the left of the center of the last clear cell before the altitude ray collided
+				if (originEntity.x + originEntity.vx < coordinatesOfIndex[previousIndex].x) {
+					return coordinatesOfIndex[previousIndex].x;
+				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'right') {
 				originEntity.altitude.right = altitude - 1;
-				if (nextFrameIndex === currentIndex || !nextFrameIndex) return coordinatesOfIndex[previousIndex].x;
-				else return null;
+				// if, next frame, the entity will be to the right of the center of the last clear cell before the altitude ray collided
+				if (originEntity.x + originEntity.vx > coordinatesOfIndex[previousIndex].x) {
+					return coordinatesOfIndex[previousIndex].x;
+				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 		}
 		

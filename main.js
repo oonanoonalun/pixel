@@ -4,27 +4,35 @@ setInterval(mainLoop, 1000 / frameRate);
     
 function mainLoop() {
     // TEMP generate ad-hoc platforming map
+    // WRONG maybe could/should just put this in the loop-over-every-pixel part of the main loop and replace 'mg' with 'i.'
+    // WRONG maybe shouldn't clear and reassign .solid and .plat properties each frame?
     if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
         for (var mg = 0; mg < pixelsPerGrid; mg++) { // i.e. 'mg' = map generation
-            // clear old daya
+            // clear old data
             propertiesOfIndex[mg].plat = false;
             propertiesOfIndex[mg].solid = false;
-            // higher chance of being solid if cell to left is a platform
-            if (mg - 1 >= 0 && propertiesOfIndex[mg - 1].plat) {
+            // high chance of being solid if cell to left is a platform
+            /*if (mg - 1 >= 0 && propertiesOfIndex[mg - 1].plat) {
                 if (Math.random() < 0.75) propertiesOfIndex[mg].plat = true;
             }
-            // if cell to left is empty, small chance of being a platform
+            // small chance of being a platform if cell to the left isn't one
             else if (Math.random() < 0.005) {
                 propertiesOfIndex[mg].plat = true;
-            }
+            }*/
             // solid perimeter
-            if (propertiesOfIndex[mg].perimeter) propertiesOfIndex[mg].solid = true;
-            // block at bottom center
+            if (propertiesOfIndex[mg].perimeter) {
+                propertiesOfIndex[mg].solid = true;
+                propertiesOfIndex[mg].notLightSensitive = true;
+            }
+            // permanently solid blocks
             if (
                 coordinatesOfIndex[mg].x > 350 &&
                 coordinatesOfIndex[mg].x < 450 &&
-                coordinatesOfIndex[mg].y > 700
-            ) propertiesOfIndex[mg].plat = true;
+                coordinatesOfIndex[mg].y > 500
+            ) {
+                propertiesOfIndex[mg].solid = true;
+                propertiesOfIndex[mg].notLightSensitive = true;
+            }
         }
     }
     // updating mouse position
@@ -132,7 +140,7 @@ function mainLoop() {
             propertiesOfIndex[i].solid = true;
             pixelArray[i * 4 + 1] = 255;
         } else {
-            if (!propertiesOfIndex[i].perimeter) propertiesOfIndex[i].solid = false;
+            if (!propertiesOfIndex[i].notLightSensitive) propertiesOfIndex[i].solid = false;
         }
         if (i === entities.points[0].index) pixelArray[i * 4 + 1] = 255;
         if (propertiesOfIndex[i].solid) pixelArray[i * 4 + 2] = 255;
@@ -198,6 +206,7 @@ function mainLoop() {
         // apply global color effects
         //modifyColors(i);
     }
+    // end looping over each pixel
     // draw pixelArray
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size

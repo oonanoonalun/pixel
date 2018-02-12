@@ -9,7 +9,7 @@ function updateEntities(entitiesArray) {
 			collision = null;
 		
 		// gravity
-		//entity.vy++;
+		// will maybe do gravity here. For now it's just for the player in input.js.
 		
 		// acceleration limited
 		var absDx = entity.vx, // absolute values
@@ -56,28 +56,34 @@ function updateEntities(entitiesArray) {
 		var collisionDown = castAltitudeAndCollisionOrthogonalRay(entity, 'down');
 		var collisionLeft = castAltitudeAndCollisionOrthogonalRay(entity, 'left');
 		var collisionRight = castAltitudeAndCollisionOrthogonalRay(entity, 'right');
+		/*if (entity === entities.points[0] && frameCounter % 15 === 0) {
+			console.log('collision udlr:', collisionUp, collisionDown, collisionLeft, collisionRight);
+			console.log('altitude udlr:', entity.altitude.up, entity.altitude.down, entity.altitude.left, entity.altitude.right);
+		}*/
 		
-		// slide or remove if collide
-		if (!collisionUp && !collisionDown && !collisionLeft && !collisionRight) { // speed applied to position
-			entity.x += entity.vx;
-			entity.y += entity.vy;
-		} else {
-			if (collisionUp) {
-				entity.x += entity.vx;
-				entity.y = collisionUp;
-			}
-			if (collisionDown) {
-				entity.x += entity.vx;
-				entity.y = collisionDown;
-			}
-			if (collisionLeft) {
-				entity.x = collisionLeft;
-				entity.y += entity.vy;
-			}
-			if (collisionRight) {
-				entity.x = collisionRight;
-				entity.y += entity.vy;
-			}
+		// stop on colliding axis, apply speed on non-colliding axes
+		// WRONG should spawn a visual impact effect based on vx/y at time of impact
+		if (!collisionUp && !collisionDown) entity.y += entity.vy;
+		if (!collisionLeft && !collisionRight) entity.x += entity.vx;
+		if (collisionUp) {
+			entity.dy = 0;
+			entity.vy = 0;
+			entity.y = collisionUp;
+		}
+		if (collisionDown) {
+			entity.dy = 0;
+			entity.vy = 0;
+			entity.y = collisionDown;
+		}
+		if (collisionLeft) {
+			entity.dx = 0;
+			entity.vx = 0;
+			entity.x = collisionLeft;
+		}
+		if (collisionRight) {
+			entity.dx = 0;
+			entity.vx = 0;
+			entity.x = collisionRight;
 		}
 	
 		// coordinates rounded (important or indexOfCoordinates[entity.x][enitity.y] and propertiesOfIndex[] won't work)
