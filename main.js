@@ -48,8 +48,11 @@ function mainLoop() {
     // TEMP platformer wandering spotlight
     // NOTE: Should maybe have a "justX/Y" option for wandering()
     wandering(entities.points[2], 2);
-    castSpotlight(entities.points[2], entities.points[1].index, 0);
-    entities.points[2].vy -= 3; // light tries to stay high
+    //castSpotlight(entities.points[2], entities.points[1].index, 0);
+    castBeamOrthogonally(entities.points[2], 'right', 2, 2048, 0);
+    //entities.points[2].y = coordinatesOfIndex[pixelsPerRow].y; // light is locked to second-to-top row
+    //entities.points[2].y -= 2; // light tries to stay high
+    //if (entities.points[2].index < pixelsPerRow) entities.points[2].y += 3; // but moves done if in the top row
     wandering(entities.points[1], 2);
     //chasing(entities.points[1], entities.points[0], 1);
     //entities.points[1].x = entities.points[2].x; // target stays directly under spotlight
@@ -83,6 +86,7 @@ function mainLoop() {
             // clear old data
             propertiesOfIndex[i].plat = false;
             propertiesOfIndex[i].solid = false;
+            propertiesOfIndex[i].notLightSensitive = false;
             // making some blocks
             var blockWidth = 7,
                 blockHeight = 7;

@@ -1,7 +1,7 @@
 var canvas = $('canvas')[0],
     context = canvas.getContext('2d'),
 	pixelsPerRow = 80,
-	pixelsPerColumn = canvas.height / canvas.width * pixelsPerRow,
+	pixelsPerColumn = Math.round(canvas.height / canvas.width * pixelsPerRow), // the Math.round() doesn't matter for the 80x60 resolution, but the system
 	pixelsPerGrid = pixelsPerRow * pixelsPerColumn,
 	scaledPixelSize = canvas.width / pixelsPerRow,
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),

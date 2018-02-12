@@ -53,7 +53,7 @@ function castSpotlight(parent, targetIndex, softness) {
 					}
 				}
 				// stop drawing the ray
-				collided = true; // NOTE: it seems like I could just 'return' here and not use the 'collided' var, but just replacing this with 'return' and deleting the 'collided' var didn't work, offhand.
+				collided = true;
 			} else {
 				// if the ray hasn't collided with something solid
 				// light the ray's path
@@ -68,6 +68,81 @@ function castSpotlight(parent, targetIndex, softness) {
 			}
 
 			// increment the coordinates for next loop
+			currentCoords.x += xStep;
+			currentCoords.y += yStep;
+		}
+	}
+}
+
+function castBeamOrthogonally(parent, direction, halfWidth, brightness, softness) {
+	var currentIndex = parent.index,
+		currentCoords = {
+			'x': parent.x,
+			'y': parent.y
+		},
+		collided,
+		xStep = 0,
+		yStep = 0;
+	if (direction === 'down') yStep = scaledPixelSize;
+	if (direction === 'up') yStep = -scaledPixelSize;
+	if (direction === 'left') xStep = -scaledPixelSize;
+	if (direction === 'right') xStep = scaledPixelSize;
+	// while the ray is still on the canvas
+	// WRONG a lot of this only works if the direction is 'down'
+	for (var w = -halfWidth; w <= halfWidth * 2; w++) { // NOTE: the width actually ends up being halfWidth * 2 + 1
+		if (
+			(direction === 'down' || direction === 'up') &&
+			parent.x + w * scaledPixelSize >= 0 &&
+			parent.x + w * scaledPixelSize < canvas.width
+		) {
+			currentCoords.x = parent.x + w * scaledPixelSize;
+			currentCoords.y = parent.y;
+		}
+		if (
+			(direction === 'left' || direction === 'right') &&
+			parent.y + w * scaledPixelSize >= 0 &&
+			parent.y + w * scaledPixelSize < canvas.height
+		) {
+			currentCoords.x = parent.x;
+			currentCoords.y = parent.y + w * scaledPixelSize;
+		}
+		collided = false;
+		while (
+			currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+			currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
+			!collided
+		) {
+			currentIndex = indexOfCoordinates[currentCoords.x][currentCoords.y];
+			// collision
+			var illumination = brightness / distanceFromIndexToIndex[parent.index][currentIndex],
+				diffusionFactor = 1.5; // illumination is divided by this when applied as softness/diffusion
+				impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
+			if (propertiesOfIndex[currentIndex].solid) {
+				// if the ray collides with something solid
+				// light the impacted surface
+				pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
+				if (softness) {
+					// diffuse the impact lighting effect
+					for (var k = 0; k < neighborsOfIndexInRadius[currentIndex][softness].length; k++) {
+						pixelArray[neighborsOfIndexInRadius[currentIndex][softness][k] * 4 + 0] += illumination / diffusionFactor * impactEnhancementScale;
+					}
+				}
+				// stop drawing the ray
+				collided = true;
+			} else {
+				// if the ray hasn't collided with something solid
+				// light the ray's path
+				currentIndex = indexOfCoordinates[currentCoords.x][currentCoords.y];
+				pixelArray[currentIndex * 4 + 0] += illumination;
+				if (softness) {
+					// diffuse the brightening effect of the ray
+					for (var j = 0; j < neighborsOfIndexInRadius[currentIndex][softness].length; j++) {
+						pixelArray[neighborsOfIndexInRadius[currentIndex][softness][j] * 4 + 0] += illumination / diffusionFactor;
+					}
+				}
+			}
+			
+			// incrementing the coordinates for next loop
 			currentCoords.x += xStep;
 			currentCoords.y += yStep;
 		}
