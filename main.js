@@ -49,7 +49,8 @@ function mainLoop() {
     // NOTE: Should maybe have a "justX/Y" option for wandering()
     wandering(entities.points[2], 2);
     //castSpotlight(entities.points[2], entities.points[1].index, 0);
-    castBeamOrthogonally(entities.points[2], 'right', 2, 2048, 0);
+    //castBeamOrthogonally(entities.points[2], 'right', 2, 2048, 0);
+    castBeam(entities.points[2].index, entities.points[2].vx, entities.points[2].vy, 3, 2048, 0);
     //entities.points[2].y = coordinatesOfIndex[pixelsPerRow].y; // light is locked to second-to-top row
     //entities.points[2].y -= 2; // light tries to stay high
     //if (entities.points[2].index < pixelsPerRow) entities.points[2].y += 3; // but moves done if in the top row

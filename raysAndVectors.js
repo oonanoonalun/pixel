@@ -1,4 +1,4 @@
-function castSpotlight(parent, targetIndex, softness) {
+function castSpotlight(parent, targetIndex, softness) { // NOTE: might want this to take magX and magY parameters instead of a target index, because then it'd be easy for it use an antity's vx and vy
 	// NOTE: This function heavily duplicates contents from the castRay() function.
 
 	var arrayOfTargetIndices = findSpotlightTargets(parent, targetIndex);
@@ -74,6 +74,9 @@ function castSpotlight(parent, targetIndex, softness) {
 	}
 }
 
+// NOTE: Should include diagonals with this function.
+// NOTE: Even if/when the freely-rotating castBeam() is working, should retain this function,
+//		as it's faster and simpler and there will be many instances where orthogonal/diagonal beams will be plenty good
 function castBeamOrthogonally(parent, direction, halfWidth, brightness, softness) {
 	var currentIndex = parent.index,
 		currentCoords = {
@@ -278,6 +281,132 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 		// incrementing the coordinates for next loop
 		currentCoords.x += xStep;
 		currentCoords.y += yStep;
+	}
+}
+
+function castBeam(originIndex, magnitudeX, magnitudeY, halfWidth, brightness, softness) { // note: asking for a magX and magY rather than a target lets you easily use a vx and vy for targeting, or otherwise not deal with a target, but use one if you want
+	// Only some of these vars are used by the perpendicular origin line. They can be initially set to be used by the main rays.
+	//		Others of these need to be initially set for use by the perpendicular origin line, then changes when i === 1 to values that make
+	//		sense for the main rays.
+	// WRONG: Eventually we need to center the beam origin on the originIndex
+	var currentIndex = originIndex,
+		absMagX = magnitudeX,
+		absMagY = magnitudeY,
+		mag,
+		originLength = halfWidth * 2 + 1,
+		originLengthCounter = 0,
+		originIndices = [],
+		currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
+		},
+		// possibly wrong: Might be 2 if we draw two rays for the origin line, one in each direction for halfWidth cells. Probably shouldn't do that though, and should just draw in tone direction, through the origin center.
+		numberOfRays = 1, // 1 or 2 for origin line, 'halfWidth * 2 + 1' for main rays
+		xStep,
+		yStep,
+		roundedX,
+		roundedY,
+		collided = false,
+		illumination,
+		diffusionFactor,
+		impactEnhancementScale;
+	if (absMagX < 0) absMagX = -absMagX;
+	if (absMagY < 0) absMagY = -absMagY;
+	mag = absMagX + absMagY;
+	// NOTE: Turning the vector 90° here
+	xStep = magnitudeY / mag * scaledPixelSize;
+	yStep = -magnitudeX / mag * scaledPixelSize;
+	for (var i = 0; i < 2; i++) { // i.e. 0 === perpendicular origin line, 1 === main rays
+		if (i === 1) { // if we're drawing the main rays
+			numberOfRays = halfWidth * 2 + 1;
+			currentIndex = originIndices[0];
+			mag = absMagX + absMagY;
+			currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
+				'x': coordinatesOfIndex[currentIndex].x,
+				'y': coordinatesOfIndex[currentIndex].y
+			};
+			collided = false;
+			xStep = magnitudeX / mag * scaledPixelSize;
+			yStep = magnitudeY / mag * scaledPixelSize;
+			absXStep = xStep;
+			absYStep = yStep;
+			originLengthCounter = 1; // just being set so the 'while' loop will go until collision or leaving the screen while the main rays are being drawn
+			if (absXStep < 0) absXStep = -absXStep;
+			if (absYStep < 0) absYStep = -absYStep;
+			absStepMag = absXStep + absYStep; // WRONG I don't think I need this, but I want to wait until things are working before attempting to remove it // this is always scaledPixelSize, or almost, but I think I want to calculate it in case something else changes
+		}
+		for (var rays = 0; rays < numberOfRays; rays++) { // for each of the rays we're supposed to draw in this phase (i.e. phase 1 = origin line, phase 2 = main rays)
+			collided = false;
+			if (i === 1) currentCoords = {
+				'x': coordinatesOfIndex[originIndices[rays]].x,
+				'y': coordinatesOfIndex[originIndices[rays]].y
+			};
+
+			// build one ray
+			while ( // for each step (cell move) in building a given ray
+				originLengthCounter < originLength && // this is only relevant for origin line, if i === 0. But if i === 1, it will be reset and won't decrement, so it will work anyway
+				currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+				currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
+				!collided
+			) {
+				// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+				roundedX = currentCoords.x;
+				roundedY = currentCoords.y;
+				if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+				if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+				if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+				if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+				if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+				if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+				
+				currentIndex = indexOfCoordinates[roundedX][roundedY];
+				
+				if (i === 0) { // if drawing the perpindicular origin line
+					originIndices[originLengthCounter] = currentIndex; // add the current index to the origin line
+				}
+
+				// drawing the origin line for testing purposes
+				//if (i === 0) pixelArray[currentIndex * 4 + 1] = 255;
+				
+				// collision
+				if (i === 1) {
+					illumination = brightness / (distanceFromIndexToIndex[originIndices[rays]][currentIndex] + 1);
+					diffusionFactor = 1.5; // illumination is divided by this when applied as softness/diffusion
+					impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
+					if (propertiesOfIndex[currentIndex].solid) {
+						// if the ray collides with something solid
+						// light the impacted surface
+						pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
+						if (softness) {
+							// diffuse the impact lighting effect
+							for (var k = 0; k < neighborsOfIndexInRadius[currentIndex][softness].length; k++) {
+								pixelArray[neighborsOfIndexInRadius[currentIndex][softness][k] * 4 + 0] += illumination / diffusionFactor * impactEnhancementScale;
+							}
+						}
+						// stop drawing the ray
+						collided = true;
+					} else {
+						// if the ray hasn't collided with something solid
+						// light the ray's path
+						currentIndex = indexOfCoordinates[roundedX][roundedY];
+						pixelArray[currentIndex * 4 + 0] += illumination;
+						if (softness) {
+							// diffuse the brightening effect of the ray
+							for (var j = 0; j < neighborsOfIndexInRadius[currentIndex][softness].length; j++) {
+								pixelArray[neighborsOfIndexInRadius[currentIndex][softness][j] * 4 + 0] += illumination / diffusionFactor;
+							}
+						}
+					}
+				}
+				
+				// counting down how long we want to draw, "using up the vector's magnitude," for the perpendicular origin line only
+				if (i === 0) originLengthCounter++;
+				
+				// incrementing the coordinates for next loop
+				currentCoords.x += xStep;
+				currentCoords.y += yStep;
+			} // end of building one ray
+		}
 	}
 }
 
