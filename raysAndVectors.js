@@ -410,7 +410,7 @@ function castBeam(originIndex, magnitudeX, magnitudeY, halfWidth, brightness, so
 	}
 }
 
-// OLD/OUTDATED but might be worth keeping for now
+// OLD/OUTDATED but should be kept around as it may have uses
 function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 	// WRONG to slide along surfaces, we'll need to return something other than just an index
 	var currentIndex = originIndex,
@@ -478,7 +478,7 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 	return null;
 }
 
-// OLD/OUTDATED but might be worth keeping for now
+// OLD/OUTDATED but should be kept around as it may have uses
 function castAltitudeRay(originIndex) {
 	var currentIndex = originIndex,
 		currentCoords = {

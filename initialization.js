@@ -32,9 +32,10 @@ function initializeEntities() {
 	// key (numbers are entities.points[n]):
 	//		0 = player
 	//		1 = player spotlight target or general-purpose target
-	//		2 = autonomous agent
+	//		2 = autonomous agent with light
+	//		3 = autonomous agent with box of collision
 	entities.points = [];
-	for (var j = 0; j < 3; j++) {
+	for (var j = 0; j < 4; j++) {
 		point = {
 			'x': Math.round(Math.random() * (canvas.width - 1)),
 			'y': Math.round(Math.random() * (canvas.height - 1)),
@@ -71,6 +72,8 @@ function initializeEntities() {
 		'narrowness': 1
 	};
 	entities.points[2].maxSpeed = 4;
+	// point 3
+	entities.points[3].noCollision = true;
 }
 
 function initializeRGBAChannels() {

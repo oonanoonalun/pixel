@@ -3,6 +3,11 @@ var frameRate = 30;
 setInterval(mainLoop, 1000 / frameRate);
     
 function mainLoop() {
+    // TEMP/WRONG, maybe
+    // clear the map's array of indices that should be platforms
+    map.platIndices = [];
+    map.solidIndices = [];
+    processEachPixel();
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -35,23 +40,36 @@ function mainLoop() {
     );*/
     //chasing(entities.points[2], entities.points[0], 1);
     //wandering(entities.points[2], 0.1);
-    /*patrol(
-        entities.points[2],
+    patrol(
+        entities.points[3],
         [
             {index: 39},
             {index: 4759}
         ],
-        0.1
-    );*/
+        0.3
+    );
+    //if (entities.points[3].y < 50) entities.points[3].dy += 0.3;
+    //if (entities.points[3].y > 550) entities.points[3].dy -= 0.3;
     //fleeing(entities.points[1], entities.points[0], 1);
     
     // TEMP platformer wandering spotlight
     // NOTE: Should maybe have a "justX/Y" option for wandering()
-    wandering(entities.points[2], 2);
+    wandering(entities.points[2], 3);
     //castSpotlight(entities.points[2], entities.points[1].index, 0);
     //castBeamOrthogonally(entities.points[2], 'right', 2, 2048, 0);
-    castBeam(entities.points[2].index, entities.points[2].vx, entities.points[2].vy, 3, 2048, 0);
-    //entities.points[2].y = coordinatesOfIndex[pixelsPerRow].y; // light is locked to second-to-top row
+    
+    // points 2 casts beam in direction it's facing
+    //castBeam(entities.points[2].index, entities.points[2].vx, entities.points[2].vy, 3, 2048, 0);
+    
+    // points 2 casts beam at player
+    castBeam(
+        entities.points[2].index,
+        xDistanceFromIndexToIndex[entities.points[2].index][entities.points[1].index],
+        yDistanceFromIndexToIndex[entities.points[2].index][entities.points[1].index],
+        8, 2048, 0
+    );
+    
+    entities.points[2].y = coordinatesOfIndex[pixelsPerRow * 10].y; // light is locked on y axis near the screen's top
     //entities.points[2].y -= 2; // light tries to stay high
     //if (entities.points[2].index < pixelsPerRow) entities.points[2].y += 3; // but moves done if in the top row
     wandering(entities.points[1], 2);
@@ -73,17 +91,25 @@ function mainLoop() {
         1
     );*/
     //wandering(entities.points[0], 1);
-    
-    // TEMP/WRONG, maybe
-    // clear the map's array of indices that should be platforms
-    map.platIndices = [];
-    map.solidIndices = [];
+    // draw pixelArray
+    context.putImageData(imageData, 0, 0);
+    // scale pixelArray up to canvas size
+    context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
+    //countFps(5, 30);    
+    frameCounter++;
+}
+
+function processEachPixel() {
     // looping over each pixel
     for (var i = 0; i < pixelsPerGrid; i++) {
+        // TEMP? For now, wiping properties each frame
+        propertiesOfIndex[i].plat = false;
+        propertiesOfIndex[i].solid = false;
+        propertiesOfIndex[i].notLightSensitive = false;
+        
         // TEMP generate ad-hoc platforming map
         // WRONG maybe shouldn't clear and reassign .solid and .plat properties each frame?
-
-        if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
+        /*if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
             // clear old data
             propertiesOfIndex[i].plat = false;
             propertiesOfIndex[i].solid = false;
@@ -92,9 +118,9 @@ function mainLoop() {
             var blockWidth = 7,
                 blockHeight = 7;
             // WRONG .push() function calls and Math.random()
-            if (Math.random() < 0.005) {
+            if (Math.random() < 0.002) {
                 var isPermanentlySolid = false;
-                if (Math.random() < 0.3) isPermanentlySolid = true;
+                if (Math.random() < 0.3) isPermanentlySolid = false; // MAKE THIS TRUE TO GET SOME PERMANENTLY SOLID BLOCKS
                 for (var bw = 0; bw < blockWidth; bw++) {
                     for (var bh = 0; bh < blockHeight; bh++) {
                         if (i + bh * pixelsPerRow < pixelsPerGrid) {
@@ -127,7 +153,19 @@ function mainLoop() {
             }
             // BROKEN Not working to clear space around player, but not worth fussing with right now
             if (distanceFromIndexToIndex[entities.points[0].index][i] < 100) propertiesOfIndex.solid = false;
+        }*/
+        
+        // moving box
+        var boxWidth = 12,
+            boxHeight = 12;
+        if (
+            absXDistanceFromIndexToIndex[i][entities.points[3].index] < boxWidth / 2 * scaledPixelSize &&
+            absYDistanceFromIndexToIndex[i][entities.points[3].index] < boxHeight / 2 * scaledPixelSize
+        ) {
+            propertiesOfIndex[i].solid = true;
+            propertiesOfIndex[i].notLightSensitive = true;
         }
+        
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
  
@@ -161,6 +199,7 @@ function mainLoop() {
         
         
         // TEMP platforming experiment
+        // indices with property .plat turn solid when they're bright enough, then go un-solid when dark
         if (propertiesOfIndex[i].plat && brightness > 128 && i !== entities.points[0].index) {
             propertiesOfIndex[i].solid = true;
             pixelArray[i * 4 + 1] = 255;
@@ -231,11 +270,4 @@ function mainLoop() {
         // apply global color effects
         //modifyColors(i);
     }
-    // end looping over each pixel
-    // draw pixelArray
-    context.putImageData(imageData, 0, 0);
-    // scale pixelArray up to canvas size
-    context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
-    //countFps(5, 30);    
-    frameCounter++;
 }
