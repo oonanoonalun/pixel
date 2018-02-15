@@ -4,14 +4,14 @@ function patrol(entity, arrayOfTargets, acceleration) {
 	if (entity.patrolArrayTargetIndex === undefined) entity.patrolArrayTargetIndex = 0;
 	entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
 	if (
-		distanceFromIndexToIndex[entity.index][arrayOfTargets[entity.patrolArrayTargetIndex].index] < 3 &&
+		distanceFromIndexToIndex[entity.index][arrayOfTargets[entity.patrolArrayTargetIndex].index] < 5 &&
 		arrayOfTargets[entity.patrolArrayTargetIndex + 1]
 	) {
 		entity.patrolArrayTargetIndex++;
 		entity.target = arrayOfTargets[entity.patrolArrayTargetIndex];
 	}
 	if (
-		distanceFromIndexToIndex[entity.index][arrayOfTargets[entity.patrolArrayTargetIndex].index] < 3 &&
+		distanceFromIndexToIndex[entity.index][arrayOfTargets[entity.patrolArrayTargetIndex].index] < 5 &&
 		!arrayOfTargets[entity.patrolArrayTargetIndex + 1]
 	) {
 		entity.patrolArrayTargetIndex = 0;
@@ -46,7 +46,7 @@ function wandering(entity, accelerationScale) {
 		entity.wanderingTargetIndex = Math.round(Math.random() * (pixelsPerGrid - 1));
 		entity.noWanderingDirectionChangeUntil = frameCounter + 300;
 	}
-	var entityIndex = indexOfCoordinates[entity.x][entity.y],
+	var entityIndex = indexOfCoordinates[entity.xRounded][entity.yRounded],
 		xDistance = xDistanceFromIndexToIndex[entityIndex][entity.wanderingTargetIndex],
 		yDistance = yDistanceFromIndexToIndex[entityIndex][entity.wanderingTargetIndex],
 		magnitude = distanceFromIndexToIndex[entityIndex][entity.wanderingTargetIndex];

@@ -212,7 +212,7 @@ function castRayToPerimeter(originIndex, xMagnitude, yMagnitude) {
 	return currentIndex; // This *should* be a perimeter index, but we could also check each step against perimeterIndices[] (but almost certainly shouldn't)
 }
 
-function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
+function castAltitudeAndCollisionRay(originEntity, direction) {
 	var currentIndex = originEntity.index,
 		previousIndex = currentIndex,
 		currentCoords = {
@@ -221,10 +221,26 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 		},
 		xStep = 0,
 		yStep = 0;
-	if (direction === 'down') yStep = scaledPixelSize;
-	if (direction === 'up') yStep = -scaledPixelSize;
-	if (direction === 'left') xStep = -scaledPixelSize;
-	if (direction === 'right') xStep = scaledPixelSize;
+	if (
+		direction === 'down' ||
+		direction === 'downLeft' ||
+		direction === 'downRight'
+	) yStep = scaledPixelSize;
+	if (
+		direction === 'up' ||
+		direction === 'upLeft' ||
+		direction === 'upRight'
+	) yStep = -scaledPixelSize;
+	if (
+		direction === 'left' ||
+		direction === 'upLeft' ||
+		direction === 'downLeft'
+	) xStep = -scaledPixelSize;
+	if (
+		direction === 'right' ||
+		direction === 'upRight' ||
+		direction === 'downRight'
+	) xStep = scaledPixelSize;
 	// while the ray is still on the canvas
 	while (
 		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
@@ -243,10 +259,8 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 		// draw the vector
 		//pixelArray[currentIndex * 4 + 2] = 0;
 		
-		// collision
+		// collision of both altitude ray and entity with geometry (separately)
 		if (propertiesOfIndex[currentIndex].solid || propertiesOfIndex[currentIndex].perimeter) { // WRONG, maybe. Maybe should handle perimeter collision differently.
-			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
-			if (altitude < 0) altitude = -altitude;
 			// NOTE: could I avoid these 'if' checks for something I already checked for?
 			//		The only thing I can think of is to duplicate the whole 'while' loop inside the initial
 			//		'if' checks for direction.
@@ -257,28 +271,157 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 				originEntity.altitude.down = altitude - 1;
 				// if, next frame, the entity will be below the center of the last clear cell before the altitude ray collided
 				if (originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y) {
-					return coordinatesOfIndex[previousIndex].y;
+					originEntity.collided = true;
+					originEntity.dy = 0;
+					originEntity.vy = 0;
+					originEntity.y = coordinatesOfIndex[previousIndex].y;
+					originEntity.x += originEntity.vx;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'up') {
 				originEntity.altitude.up = altitude - 1;
 				// if, next frame, the entity will be above the center of the last clear cell before the altitude ray collided
 				if (originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y) {
-					return coordinatesOfIndex[previousIndex].y;
+					originEntity.collided = true;
+					originEntity.dy = 0;
+					originEntity.vy = 0;
+					originEntity.y = coordinatesOfIndex[previousIndex].y;
+					originEntity.x += originEntity.vx;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'left') {
 				originEntity.altitude.left = altitude - 1;
 				// if, next frame, the entity will be to the left of the center of the last clear cell before the altitude ray collided
 				if (originEntity.x + originEntity.vx < coordinatesOfIndex[previousIndex].x) {
-					return coordinatesOfIndex[previousIndex].x;
+					originEntity.collided = true;
+					originEntity.dx = 0;
+					originEntity.vx = 0;
+					originEntity.x = coordinatesOfIndex[previousIndex].x;
+					originEntity.y += originEntity.vy;
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 			if (direction === 'right') {
 				originEntity.altitude.right = altitude - 1;
 				// if, next frame, the entity will be to the right of the center of the last clear cell before the altitude ray collided
 				if (originEntity.x + originEntity.vx > coordinatesOfIndex[previousIndex].x) {
-					return coordinatesOfIndex[previousIndex].x;
+					originEntity.collided = true;
+					originEntity.dx = 0;
+					originEntity.vx = 0;
+					originEntity.x = coordinatesOfIndex[previousIndex].x;
+					originEntity.y += originEntity.vy;
+				} else return null; // i.e. the entity won't collide in this direction next frame
+			}
+			// diagonals lock the entity's coordinate on the axis on which it was moving the least quickly, and it continues moving on the axis on which it was moving most quickly
+			if (direction === 'upLeft') {
+				originEntity.altitude.upLeft = altitude - 1;
+				// if, next frame, the entity will be to the upper left of the center of the last clear cell before the altitude ray collided
+				if (
+					originEntity.x + originEntity.vx < coordinatesOfIndex[previousIndex].x &&
+					originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y
+				) {
+					originEntity.collided = true;
+					if (originEntity.absVx > entity.absVy) {
+						originEntity.dy = 0;
+						originEntity.vy = 0;
+						originEntity.y = coordinatesOfIndex[previousIndex].y;
+						originEntity.x += originEntity.vx;
+					}
+					if (originEntity.absVy > entity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.x = coordinatesOfIndex[previousIndex].x;
+						originEntity.y += originEntity.vy;
+					}
+					if (originEntity.absVy === originEntity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.dy = 0;
+						originEntity.vx = 0;
+					}
+				} else return null; // i.e. the entity won't collide in this direction next frame
+			}
+			if (direction === 'upRight') {
+				originEntity.altitude.upRight = altitude - 1;
+				// if, next frame, the entity will be to the upper right of the center of the last clear cell before the altitude ray collided
+				if (
+					originEntity.x + originEntity.vx > coordinatesOfIndex[previousIndex].x &&
+					originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y
+				) {
+					originEntity.collided = true;
+					if (originEntity.absVx > entity.absVy) {
+						originEntity.dy = 0;
+						originEntity.vy = 0;
+						originEntity.y = coordinatesOfIndex[previousIndex].y;
+						originEntity.x += originEntity.vx;
+					}
+					if (originEntity.absVy > entity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.x = coordinatesOfIndex[previousIndex].x;
+						originEntity.y += originEntity.vy;
+					}
+					if (originEntity.absVy === originEntity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.dy = 0;
+						originEntity.vx = 0;
+					}
+				} else return null; // i.e. the entity won't collide in this direction next frame
+			}
+			if (direction === 'downLeft') {
+				originEntity.altitude.downLeft = altitude - 1;
+				// if, next frame, the entity will be to the lower left of the center of the last clear cell before the altitude ray collided
+				if (
+					originEntity.x + originEntity.vx < coordinatesOfIndex[previousIndex].x &&
+					originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y
+				) {
+					originEntity.collided = true;
+					if (originEntity.absVx > entity.absVy) {
+						originEntity.dy = 0;
+						originEntity.vy = 0;
+						originEntity.y = coordinatesOfIndex[previousIndex].y;
+						originEntity.x += originEntity.vx;
+					}
+					if (originEntity.absVy > entity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.x = coordinatesOfIndex[previousIndex].x;
+						originEntity.y += originEntity.vy;
+					}
+					if (originEntity.absVy === originEntity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.dy = 0;
+						originEntity.vx = 0;
+					}
+				} else return null; // i.e. the entity won't collide in this direction next frame
+			}
+			if (direction === 'downRight') {
+				originEntity.altitude.downRight = altitude - 1;
+				// if, next frame, the entity will be to the lower right of the center of the last clear cell before the altitude ray collided
+				if (
+					originEntity.x + originEntity.vx > coordinatesOfIndex[previousIndex].x &&
+					originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y
+				) {
+					originEntity.collided = true;
+					if (originEntity.absVx > entity.absVy) {
+						originEntity.dy = 0;
+						originEntity.vy = 0;
+						originEntity.y = coordinatesOfIndex[previousIndex].y;
+						originEntity.x += originEntity.vx;
+					}
+					if (originEntity.absVy > entity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.x = coordinatesOfIndex[previousIndex].x;
+						originEntity.y += originEntity.vy;
+					}
+					if (originEntity.absVy === originEntity.absVx) {
+						originEntity.dx = 0;
+						originEntity.vx = 0;
+						originEntity.dy = 0;
+						originEntity.vx = 0;
+					}
 				} else return null; // i.e. the entity won't collide in this direction next frame
 			}
 		}
@@ -289,6 +432,9 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 		// incrementing the coordinates for next loop
 		currentCoords.x += xStep;
 		currentCoords.y += yStep;
+					// WRONG, maybe. Is this calculation for altitude functionally appropriate for diagonals?
+			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
+			if (altitude < 0) altitude = -altitude;
 	}
 }
 

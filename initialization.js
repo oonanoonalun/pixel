@@ -41,8 +41,11 @@ function initializeEntities() {
 			'y': Math.round(Math.random() * (canvas.height - 1)),
 			'dx': 0,
 			'vx': 0,
+			'absVx': 0,
 			'dy': 0,
 			'vy': 0,
+			'absVy': 0,
+			'v': 0,
 			'maxAcceleration': 5,
 			'maxSpeed': 25,
 			'altitude': {
@@ -57,6 +60,9 @@ function initializeEntities() {
 			'shouldBeRemoved': false // WRONG: Doesn't need to be initialized. Same for lines.
 		};
 		point.index = indexOfCoordinates[point.x][point.y];
+		point.previousIndex = point.index;
+		point.xRounded = point.x;
+		point.yRounded = point.y;
 		entities.points.push(point);
 		entities.all.push(point);
 	}

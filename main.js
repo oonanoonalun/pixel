@@ -45,7 +45,7 @@ function mainLoop() {
     patrol(
         entities.points[3],
         [
-            {index: 39},
+            {index: 39 + 30 * pixelsPerRow},
             {index: 4759}
         ],
         0.3
@@ -96,15 +96,14 @@ function mainLoop() {
     //      They used to both be one function called processEachPixel(), but getting collision with moving map elements
     //      was easier/possible with updateEntities() coming between the two.
     buildMap();
-    collision(); // WRONG: this is actually just handing the case of the map building solidness over the player. If this works, it could be integrated with updateEntities
+        drawEachPixel();
+    //interiorCollision(); // WRONG: this is actually just handing the case of the map building solidness over the player. If this works, it could be integrated with updateEntities
     // updating entity position, speed, acceleration, nearest index, and child position
     updateEntities(entities.all);
     // TEMP/WRONG, maybe
     // clear the map's array of indices that should be platforms or solid before reassigning them during processEachPixel
     map.platIndices = [];
     map.solidIndices = [];
-    drawEachPixel();
-    //collision();
     
     // draw pixelArray
     context.putImageData(imageData, 0, 0);
@@ -195,12 +194,12 @@ function buildMap() {
             propertiesOfIndex[i].notLightSensitive = true;
         }
         
-        // solid bottom two rows (trying to avoid a perimeter interaction so can just focus on solid interaction)
-        if (
-            i > pixelsPerGrid - pixelsPerRow * 2 - 1
-        ) {
-            propertiesOfIndex[i].solid = true;
-            propertiesOfIndex[i].notLightSensitive = true;
+        // out two cell-widths solid. avoiding interections with the perimeter because I've got something set up weird with regard to interacting with it
+        for (var p = 0; p < perimeterIndices.length; p++) {
+            if (distanceFromIndexToIndex[perimeterIndices[p]][i] < scaledPixelSize * 2) {
+                propertiesOfIndex[i].solid = true;
+                propertiesOfIndex[i].notLightSensitive = true;
+            }
         }
     }
 }
