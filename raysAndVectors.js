@@ -230,7 +230,15 @@ function castAltitudeAndCollisionOrthogonalRay(originEntity, direction) {
 		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
 	) {
-		currentIndex = indexOfCoordinates[currentCoords.x][currentCoords.y];
+		var roundedX = currentCoords.x,
+			roundedY = currentCoords.y;
+		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+		currentIndex = indexOfCoordinates[roundedX][roundedY];
 		
 		// draw the vector
 		//pixelArray[currentIndex * 4 + 2] = 0;
@@ -479,18 +487,34 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 }
 
 // OLD/OUTDATED but should be kept around as it may have uses
-function castAltitudeRay(originIndex) {
-	var currentIndex = originIndex,
+function castAltitudeRay(originEntity, direction) {
+	var currentIndex = originEntity.index,
 		currentCoords = {
 			'x': coordinatesOfIndex[currentIndex].x,
 			'y': coordinatesOfIndex[currentIndex].y
 		},
 		xStep = 0,
 		yStep = 0;
-	if (platformer.gravity.direction === 'down') yStep = scaledPixelSize;
-	if (platformer.gravity.direction === 'up') yStep = -scaledPixelSize;
-	if (platformer.gravity.direction === 'left') xStep = -scaledPixelSize;
-	if (platformer.gravity.direction === 'right') xStep = scaledPixelSize;
+	if (
+		direction === 'down' ||
+		direction === 'downLeft' ||
+		direction === 'downRight'
+	) yStep = scaledPixelSize;
+	if (
+		direction === 'up' ||
+		direction === 'upLeft' ||
+		direction === 'upRight'
+	) yStep = -scaledPixelSize;
+	if (
+		direction === 'left' ||
+		direction === 'downLeft' ||
+		direction === 'upLeft'
+	) xStep = -scaledPixelSize;
+	if (
+		direction === 'right' ||
+		direction === 'downRight' ||
+		direction === 'upRight'
+	) xStep = scaledPixelSize;
 	while (
 		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
@@ -498,18 +522,29 @@ function castAltitudeRay(originIndex) {
 		currentIndex = indexOfCoordinates[currentCoords.x][currentCoords.y];
 		
 		// draw the vector
-		//pixelArray[currentIndex * 4 + 2] = 0;
+		/*if (originEntity === entities.points[0]) {
+			pixelArray[currentIndex * 4 + 2] = 64;
+			pixelArray[currentIndex * 4 + 1] = 64;
+		}*/
 		
 		// collision
-		if (propertiesOfIndex[currentIndex].solid) {
-			var altitude = distanceFromIndexToIndex[currentIndex][originIndex] / scaledPixelSize;
+		// WRONG: should probably return something distinct for colliding with the perimeter
+		if (propertiesOfIndex[currentIndex].solid || propertiesOfIndex[currentIndex].perimeter) {
+			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
 			if (altitude < 0) altitude = -altitude;
-			return altitude - 1;
+			if (direction === 'down') originEntity.altitude.down = altitude - 1;
+			if (direction === 'up') originEntity.altitude.up = altitude - 1;
+			if (direction === 'left') originEntity.altitude.left = altitude - 1;
+			if (direction === 'right') originEntity.altitude.right = altitude - 1;
+			if (direction === 'downLeft') originEntity.altitude.downLeft = altitude - 1;
+			if (direction === 'downRight') originEntity.altitude.downRight = altitude - 1;
+			if (direction === 'upLeft') originEntity.altitude.upLeft = altitude - 1;
+			if (direction === 'upRight') originEntity.altitude.upRight = altitude - 1;
+			return;
 		}
 		
 		// incrementing the coordinates for next loop
 		currentCoords.x += xStep;
 		currentCoords.y += yStep;
 	}
-	return 'over abyss'; // WRONG this might cause problems, depending on what we use castAltitudeRay() for.
 }

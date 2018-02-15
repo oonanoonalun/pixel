@@ -43,6 +43,17 @@ function updateEntities(entitiesArray) {
 			entity.vx *= entity.maxSpeed / (absVx + absVy);
 			entity.vy *= entity.maxSpeed / (absVx + absVy);
 		}
+		
+		// TEMP altitude might be integrated with collision... or not. For now it's isolated:
+		castAltitudeRay(entity, 'down');
+		castAltitudeRay(entity, 'up');
+		castAltitudeRay(entity, 'left');
+		castAltitudeRay(entity, 'right');
+		castAltitudeRay(entity, 'downLeft');
+		castAltitudeRay(entity, 'downRight');
+		castAltitudeRay(entity, 'upLeft');
+		castAltitudeRay(entity, 'upRight');
+		
 		// friction applied to speed
 		var friction = 0.9;
 		if (
@@ -62,6 +73,7 @@ function updateEntities(entitiesArray) {
 		entity.vy *= friction;
 		
 		// check for collisions next frame
+		// TEMP that this is commented out. Moving collision to later in the main loop.
 		if (!entity.noCollision) {
 			collisionUp = castAltitudeAndCollisionOrthogonalRay(entity, 'up');
 			collisionDown = castAltitudeAndCollisionOrthogonalRay(entity, 'down');
@@ -75,6 +87,7 @@ function updateEntities(entitiesArray) {
 		
 		// stop on colliding axis, apply speed on non-colliding axes
 		// WRONG should spawn a visual impact effect based on vx/y at time of impact
+		// TEMP that this is commented out. Moving collision to later in the main loop.
 		if (!collisionUp && !collisionDown) entity.y += entity.vy;
 		if (!collisionLeft && !collisionRight) entity.x += entity.vx;
 		if (collisionUp) {
@@ -97,6 +110,10 @@ function updateEntities(entitiesArray) {
 			entity.vx = 0;
 			entity.x = collisionRight;
 		}
+		
+		// TEMP This only commented in if collision is commented out
+		//entity.x += entity.vx;
+		//entity.y += entity.vy;
 	
 		// coordinates rounded (important or indexOfCoordinates[entity.x][enitity.y] and propertiesOfIndex[] won't work)
 		// avoiding a Math.round() function call
@@ -137,4 +154,47 @@ function updateEntities(entitiesArray) {
 		//			To move an entity, change its coordinates.
 		entity.index = indexOfCoordinates[entity.x][entity.y];
 	}
+}
+
+function collision() {
+    // WRONG, maybe. This might repeat work that could be instead stored on the entity during earlier raycasting and movment steps.
+    for (var entityNumber = 0; entityNumber < entities.all.length; entityNumber++) {
+        var entity = entities.all[entityNumber];
+        if (!entity.noCollision) {
+            if (propertiesOfIndex[entity.index].solid) {
+                // NOTE: should some of these vars be calculated every frame and stored on the entity?
+				//		Like maybe the player should have a vector with a magnitude of 1 at all times, plus a speed. That would
+				//		would streamline some things that find all this stuff constantly.
+                // WRONG, I think. Maybe just walk back x and y indices separately, index by index,
+				//		then ... ? Something to lock the entities coorindate on on colliding axis and apply .v? on non-colliding axis.
+				var absVx = entity.vx,
+                    absVy = entity.vy,
+                    backVx = -entity.vx,
+                    backVy = -entity.vy;
+                if (absVx < 0) absVx = -absVx;
+                if (absVy < 0) absVy = -absVy;
+                var vectorMag = absVx + absVy,
+					xStepBack = backVx / vectorMag * scaledPixelSize,
+					yStepBack = backVy / vectorMag * scaledPixelSize;
+                while (
+					propertiesOfIndex[entity.index].solid &&
+					!propertiesOfIndex[entity.index].perimeter
+				) {
+                    entity.x += xStepBack;
+                    entity.y += yStepBack;
+                    var roundedX = entity.x,
+						roundedY = entity.y;
+                    if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+                    if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+                    if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+                    if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+                    if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+                    if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+                    entity.index = indexOfCoordinates[roundedX][roundedY];
+                }
+				castAltitudeRay(entity, 'down');
+				console.log(entity.altitude.down);
+            }
+        }
+    }
 }

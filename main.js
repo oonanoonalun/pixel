@@ -1,13 +1,18 @@
+/*Order things need to happen in:
+ *
+ *1. map is built
+ *2. Illumination makes things solid or not
+ *3. entities move
+ *4. collision
+ *5. drawing
+ *
+ */
+
 var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
     
 function mainLoop() {
-    // TEMP/WRONG, maybe
-    // clear the map's array of indices that should be platforms
-    map.platIndices = [];
-    map.solidIndices = [];
-    processEachPixel();
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -17,9 +22,6 @@ function mainLoop() {
     
     // player spotlight
     //castSpotlight(entities.points[0], entities.points[1].index, 0);
-    
-    // updating entity position, speed, acceleration, collision, nearest index, and child position
-    updateEntities(entities.all);
     
     // player controls
     //controls(4, entities.points[0].spotlight.narrowness);
@@ -61,13 +63,13 @@ function mainLoop() {
     // points 2 casts beam in direction it's facing
     //castBeam(entities.points[2].index, entities.points[2].vx, entities.points[2].vy, 3, 2048, 0);
     
-    // points 2 casts beam at player
-    castBeam(
+    // points 2 casts beam
+    /*castBeam(
         entities.points[2].index,
         xDistanceFromIndexToIndex[entities.points[2].index][entities.points[1].index],
         yDistanceFromIndexToIndex[entities.points[2].index][entities.points[1].index],
         8, 2048, 0
-    );
+    );*/
     
     entities.points[2].y = coordinatesOfIndex[pixelsPerRow * 10].y; // light is locked on y axis near the screen's top
     //entities.points[2].y -= 2; // light tries to stay high
@@ -90,16 +92,32 @@ function mainLoop() {
         ],
         1
     );*/
-    //wandering(entities.points[0], 1);
+    // WRONG, maybe: Right now, both buildMap() and drawEachPixel() loop over every index.
+    //      They used to both be one function called processEachPixel(), but getting collision with moving map elements
+    //      was easier/possible with updateEntities() coming between the two.
+    buildMap();
+    collision(); // WRONG: this is actually just handing the case of the map building solidness over the player. If this works, it could be integrated with updateEntities
+    // updating entity position, speed, acceleration, nearest index, and child position
+    updateEntities(entities.all);
+    // TEMP/WRONG, maybe
+    // clear the map's array of indices that should be platforms or solid before reassigning them during processEachPixel
+    map.platIndices = [];
+    map.solidIndices = [];
+    drawEachPixel();
+    //collision();
+    
     // draw pixelArray
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
     context.drawImage(canvas, 0, 0, pixelsPerRow, pixelsPerColumn, 0, 0, canvas.width, canvas.height);
+    // log the average frames per second
     //countFps(5, 30);    
+    // increment the frame counter (everything in each interation of the main loop should be counted as being in the same frame).
+    //      frameCounter starts at 1 so that all initialization before the mainLoop() runs counts as being in frame 1.
     frameCounter++;
 }
 
-function processEachPixel() {
+function buildMap() {
     // looping over each pixel
     for (var i = 0; i < pixelsPerGrid; i++) {
         // TEMP? For now, wiping properties each frame
@@ -166,6 +184,29 @@ function processEachPixel() {
             propertiesOfIndex[i].notLightSensitive = true;
         }
         
+        // static box
+        var sBoxWidth = 12,
+            sBoxHeight = 12;
+        if (
+            absXDistanceFromIndexToIndex[i][pixelsPerGrid - 7 * pixelsPerRow] < sBoxWidth / 2 * scaledPixelSize &&
+            absYDistanceFromIndexToIndex[i][pixelsPerGrid - 7 * pixelsPerRow] < sBoxHeight / 2 * scaledPixelSize
+        ) {
+            propertiesOfIndex[i].solid = true;
+            propertiesOfIndex[i].notLightSensitive = true;
+        }
+        
+        // solid bottom two rows (trying to avoid a perimeter interaction so can just focus on solid interaction)
+        if (
+            i > pixelsPerGrid - pixelsPerRow * 2 - 1
+        ) {
+            propertiesOfIndex[i].solid = true;
+            propertiesOfIndex[i].notLightSensitive = true;
+        }
+    }
+}
+
+function drawEachPixel() {
+    for (var i = 0; i < pixelsPerGrid; i++) {
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
  
