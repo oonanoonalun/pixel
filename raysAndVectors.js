@@ -42,7 +42,7 @@ function castSpotlight(parent, targetIndex, softness) { // NOTE: might want this
 			var illumination = parent.spotlight.brightness / distanceFromIndexToIndex[parent.index][currentIndex],
 				diffusionFactor = 1.5; // illumination is divided by this when applied as softness/diffusion
 				impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
-			if (propertiesOfIndex[currentIndex].solid) {
+			if (platOfIndex[currentIndex] || solidOfIndex[currentIndex]) {
 				// if the ray collides with something solid
 				// light the impacted surface
 				pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
@@ -120,7 +120,7 @@ function castBeamOrthogonally(parent, direction, halfWidth, brightness, softness
 			var illumination = brightness / distanceFromIndexToIndex[parent.index][currentIndex],
 				diffusionFactor = 1.5; // illumination is divided by this when applied as softness/diffusion
 				impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
-			if (propertiesOfIndex[currentIndex].solid) {
+			if (platOfIndex[currentIndex] || solidOfIndex[currentIndex]) {
 				// if the ray collides with something solid
 				// light the impacted surface
 				pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
@@ -215,9 +215,10 @@ function castRayToPerimeter(originIndex, xMagnitude, yMagnitude) {
 function castAltitudeAndCollisionRay(originEntity, direction) {
 	var currentIndex = originEntity.index,
 		previousIndex = currentIndex,
+		// WRONG, maybe. Could just do this whole thing with indices, but would have to tweak individual directions.
 		currentCoords = {
-			'x': originEntity.x,
-			'y': originEntity.y
+			'x': coordinatesOfIndex[currentIndex].x,
+			'y': coordinatesOfIndex[currentIndex].y
 		},
 		xStep = 0,
 		yStep = 0;
@@ -246,21 +247,16 @@ function castAltitudeAndCollisionRay(originEntity, direction) {
 		currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
 		currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1
 	) {
-		var roundedX = currentCoords.x,
-			roundedY = currentCoords.y;
-		if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
-		if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
-		if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
-		if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
-		if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
-		if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
-		currentIndex = indexOfCoordinates[roundedX][roundedY];
+		currentIndex = indexOfCoordinates[currentCoords.x][currentCoords.y];
 		
-		// draw the vector
+		// draw the ray
 		//pixelArray[currentIndex * 4 + 2] = 0;
 		
 		// collision of both altitude ray and entity with geometry (separately)
-		if (propertiesOfIndex[currentIndex].solid || propertiesOfIndex[currentIndex].perimeter) { // WRONG, maybe. Maybe should handle perimeter collision differently.
+		if (solidOfIndex[currentIndex] || perimeterOfIndex[currentIndex]) { // WRONG, maybe. Maybe should handle perimeter collision differently.
+			// WRONG, maybe. Is this calculation for altitude functionally appropriate for diagonals?
+			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
+			if (altitude < 0) altitude = -altitude;
 			// NOTE: could I avoid these 'if' checks for something I already checked for?
 			//		The only thing I can think of is to duplicate the whole 'while' loop inside the initial
 			//		'if' checks for direction.
@@ -320,13 +316,13 @@ function castAltitudeAndCollisionRay(originEntity, direction) {
 					originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y
 				) {
 					originEntity.collided = true;
-					if (originEntity.absVx > entity.absVy) {
+					if (originEntity.absVx > originEntity.absVy) {
 						originEntity.dy = 0;
 						originEntity.vy = 0;
 						originEntity.y = coordinatesOfIndex[previousIndex].y;
 						originEntity.x += originEntity.vx;
 					}
-					if (originEntity.absVy > entity.absVx) {
+					if (originEntity.absVy > originEntity.absVx) {
 						originEntity.dx = 0;
 						originEntity.vx = 0;
 						originEntity.x = coordinatesOfIndex[previousIndex].x;
@@ -348,13 +344,13 @@ function castAltitudeAndCollisionRay(originEntity, direction) {
 					originEntity.y + originEntity.vy < coordinatesOfIndex[previousIndex].y
 				) {
 					originEntity.collided = true;
-					if (originEntity.absVx > entity.absVy) {
+					if (originEntity.absVx > originEntity.absVy) {
 						originEntity.dy = 0;
 						originEntity.vy = 0;
 						originEntity.y = coordinatesOfIndex[previousIndex].y;
 						originEntity.x += originEntity.vx;
 					}
-					if (originEntity.absVy > entity.absVx) {
+					if (originEntity.absVy > originEntity.absVx) {
 						originEntity.dx = 0;
 						originEntity.vx = 0;
 						originEntity.x = coordinatesOfIndex[previousIndex].x;
@@ -376,13 +372,13 @@ function castAltitudeAndCollisionRay(originEntity, direction) {
 					originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y
 				) {
 					originEntity.collided = true;
-					if (originEntity.absVx > entity.absVy) {
+					if (originEntity.absVx > originEntity.absVy) {
 						originEntity.dy = 0;
 						originEntity.vy = 0;
 						originEntity.y = coordinatesOfIndex[previousIndex].y;
 						originEntity.x += originEntity.vx;
 					}
-					if (originEntity.absVy > entity.absVx) {
+					if (originEntity.absVy > originEntity.absVx) {
 						originEntity.dx = 0;
 						originEntity.vx = 0;
 						originEntity.x = coordinatesOfIndex[previousIndex].x;
@@ -404,13 +400,13 @@ function castAltitudeAndCollisionRay(originEntity, direction) {
 					originEntity.y + originEntity.vy > coordinatesOfIndex[previousIndex].y
 				) {
 					originEntity.collided = true;
-					if (originEntity.absVx > entity.absVy) {
+					if (originEntity.absVx > originEntity.absVy) {
 						originEntity.dy = 0;
 						originEntity.vy = 0;
 						originEntity.y = coordinatesOfIndex[previousIndex].y;
 						originEntity.x += originEntity.vx;
 					}
-					if (originEntity.absVy > entity.absVx) {
+					if (originEntity.absVy > originEntity.absVx) {
 						originEntity.dx = 0;
 						originEntity.vx = 0;
 						originEntity.x = coordinatesOfIndex[previousIndex].x;
@@ -432,9 +428,6 @@ function castAltitudeAndCollisionRay(originEntity, direction) {
 		// incrementing the coordinates for next loop
 		currentCoords.x += xStep;
 		currentCoords.y += yStep;
-					// WRONG, maybe. Is this calculation for altitude functionally appropriate for diagonals?
-			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
-			if (altitude < 0) altitude = -altitude;
 	}
 }
 
@@ -527,7 +520,7 @@ function castBeam(originIndex, magnitudeX, magnitudeY, halfWidth, brightness, so
 					illumination = brightness / (distanceFromIndexToIndex[originIndices[rays]][currentIndex] + 1);
 					diffusionFactor = 1.5; // illumination is divided by this when applied as softness/diffusion
 					impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
-					if (propertiesOfIndex[currentIndex].solid) {
+					if (platOfIndex[currentIndex] || solidOfIndex[currentIndex]) {
 						// if the ray collides with something solid
 						// light the impacted surface
 						pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
@@ -615,7 +608,7 @@ function castCollisionVector(originIndex, magnitudeX, magnitudeY) {
 		//pixelArray[currentIndex * 4 + 2] = 0;
 		
 		// collision
-		if (propertiesOfIndex[currentIndex].solid) {
+		if (solidOfIndex[currentIndex]) {
 			return coordinatesOfIndex[previousIndex].y;
 		}
 		
@@ -675,7 +668,7 @@ function castAltitudeRay(originEntity, direction) {
 		
 		// collision
 		// WRONG: should probably return something distinct for colliding with the perimeter
-		if (propertiesOfIndex[currentIndex].solid || propertiesOfIndex[currentIndex].perimeter) {
+		if (solidOfIndex[currentIndex] || perimeterOfIndex[currentIndex]) {
 			var altitude = distanceFromIndexToIndex[currentIndex][originEntity.index] / scaledPixelSize;
 			if (altitude < 0) altitude = -altitude;
 			if (direction === 'down') originEntity.altitude.down = altitude - 1;

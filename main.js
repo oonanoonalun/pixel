@@ -1,13 +1,3 @@
-/*Order things need to happen in:
- *
- *1. map is built
- *2. Illumination makes things solid or not
- *3. entities move
- *4. collision
- *5. drawing
- *
- */
-
 var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
@@ -77,7 +67,8 @@ function mainLoop() {
     wandering(entities.points[1], 2);
     //chasing(entities.points[1], entities.points[0], 1);
     //entities.points[1].x = entities.points[2].x; // target stays directly under spotlight
-    entities.points[1].y = coordinatesOfIndex[pixelsPerGrid + 1 - pixelsPerRow].y; // target point stays on the bottom row
+    // WRONG: All the behavior above should be in a function called "behavior"
+    entities.points[1].y = coordinatesOfIndex[pixelsPerGrid - pixelsPerRow].y; // target point stays on the bottom row
     
     
     /*patrol(
@@ -92,19 +83,12 @@ function mainLoop() {
         ],
         1
     );*/
-    // WRONG, maybe: Right now, both buildMap() and drawEachPixel() loop over every index.
-    //      They used to both be one function called processEachPixel(), but getting collision with moving map elements
-    //      was easier/possible with updateEntities() coming between the two.
     buildMap();
-        drawEachPixel();
-    //interiorCollision(); // WRONG: this is actually just handing the case of the map building solidness over the player. If this works, it could be integrated with updateEntities
     // updating entity position, speed, acceleration, nearest index, and child position
     updateEntities(entities.all);
-    // TEMP/WRONG, maybe
-    // clear the map's array of indices that should be platforms or solid before reassigning them during processEachPixel
-    map.platIndices = [];
-    map.solidIndices = [];
-    
+    processEachPixel();
+    // just testing
+    //pixelArray[2440 * 4 + 0] = 255;
     // draw pixelArray
     context.putImageData(imageData, 0, 0);
     // scale pixelArray up to canvas size
@@ -117,97 +101,39 @@ function mainLoop() {
 }
 
 function buildMap() {
-    // looping over each pixel
-    for (var i = 0; i < pixelsPerGrid; i++) {
-        // TEMP? For now, wiping properties each frame
-        propertiesOfIndex[i].plat = false;
-        propertiesOfIndex[i].solid = false;
-        propertiesOfIndex[i].notLightSensitive = false;
-        
-        // TEMP generate ad-hoc platforming map
-        // WRONG maybe shouldn't clear and reassign .solid and .plat properties each frame?
-        /*if ((keysDown[KEY_G] && keysDown[KEY_SHIFT]) || frameCounter === 1) {
-            // clear old data
-            propertiesOfIndex[i].plat = false;
-            propertiesOfIndex[i].solid = false;
-            propertiesOfIndex[i].notLightSensitive = false;
-            // making some blocks
-            var blockWidth = 7,
-                blockHeight = 7;
-            // WRONG .push() function calls and Math.random()
-            if (Math.random() < 0.002) {
-                var isPermanentlySolid = false;
-                if (Math.random() < 0.3) isPermanentlySolid = false; // MAKE THIS TRUE TO GET SOME PERMANENTLY SOLID BLOCKS
-                for (var bw = 0; bw < blockWidth; bw++) {
-                    for (var bh = 0; bh < blockHeight; bh++) {
-                        if (i + bh * pixelsPerRow < pixelsPerGrid) {
-                            if (!isPermanentlySolid) map.platIndices.push(i + bw + bh * pixelsPerRow);
-                            else map.solidIndices.push(i + bw + bh * pixelsPerRow);
-                        }
+    if (frameCounter === 1 || (keysDown[KEY_SHIFT] && keysDown[KEY_G])) {
+        platOfIndex = dummyFalseArray;
+        var numberOfBlocks = 15,
+            blockSize = 6;
+        for (var i = 0; i < numberOfBlocks; i++) {
+            var blockUpperLeft = Math.round(Math.random() * (pixelsPerGrid - 1));
+            for (var j = 0; j < blockSize; j++) { // could be blockWidth/column
+                for (var k = 0; k < blockSize; k++) { // could be blockHeight/row
+                    if (blockUpperLeft + j + k * pixelsPerRow < pixelsPerGrid) {
+                        platOfIndex[blockUpperLeft + j + k * pixelsPerRow] = true;
                     }
                 }
             }
-            for (var pi = 0; pi < map.platIndices.length; pi++) { // i.e. = platform index
-                if (i === map.platIndices[pi]) propertiesOfIndex[i].plat = true;
-            }
-            for (var si = 0; si < map.solidIndices.length; si++) { // i.e. = solid index
-                if (i === map.solidIndices[si]) propertiesOfIndex[i].solid = true;
-                if (i === map.solidIndices[si]) propertiesOfIndex[i].notLightSensitive = true;
-            }
-            // solid perimeter
-            if (propertiesOfIndex[i].perimeter) {
-                propertiesOfIndex[i].solid = true;
-                propertiesOfIndex[i].notLightSensitive = true;
-            }
-            // permanently solid blocks
-            if (
-                coordinatesOfIndex[i].x > 350 &&
-                coordinatesOfIndex[i].x < 450 &&
-                coordinatesOfIndex[i].y > 500
-            ) {
-                propertiesOfIndex[i].solid = true;
-                propertiesOfIndex[i].notLightSensitive = true;
-            }
-            // BROKEN Not working to clear space around player, but not worth fussing with right now
-            if (distanceFromIndexToIndex[entities.points[0].index][i] < 100) propertiesOfIndex.solid = false;
-        }*/
-        
-        // moving box
-        var boxWidth = 12,
-            boxHeight = 12;
-        if (
-            absXDistanceFromIndexToIndex[i][entities.points[3].index] < boxWidth / 2 * scaledPixelSize &&
-            absYDistanceFromIndexToIndex[i][entities.points[3].index] < boxHeight / 2 * scaledPixelSize
-        ) {
-            propertiesOfIndex[i].solid = true;
-            propertiesOfIndex[i].notLightSensitive = true;
-        }
-        
-        // static box
-        var sBoxWidth = 12,
-            sBoxHeight = 12;
-        if (
-            absXDistanceFromIndexToIndex[i][pixelsPerGrid - 7 * pixelsPerRow] < sBoxWidth / 2 * scaledPixelSize &&
-            absYDistanceFromIndexToIndex[i][pixelsPerGrid - 7 * pixelsPerRow] < sBoxHeight / 2 * scaledPixelSize
-        ) {
-            propertiesOfIndex[i].solid = true;
-            propertiesOfIndex[i].notLightSensitive = true;
-        }
-        
-        // out two cell-widths solid. avoiding interections with the perimeter because I've got something set up weird with regard to interacting with it
-        for (var p = 0; p < perimeterIndices.length; p++) {
-            if (distanceFromIndexToIndex[perimeterIndices[p]][i] < scaledPixelSize * 2) {
-                propertiesOfIndex[i].solid = true;
-                propertiesOfIndex[i].notLightSensitive = true;
-            }
-        }
+        }        
     }
 }
 
-function drawEachPixel() {
+function processEachPixel() {
     for (var i = 0; i < pixelsPerGrid; i++) {
+        ///////////////////
+        // draw pixels
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
         var brightness = 0;
+        
+        //if (i === 0 && frameCounter % 15 === 0) console.log(platOfIndex);
+        // bright plats are solid, dim ones aren't
+        
+        
+        if (platOfIndex[i] && pixelArray[i * 4 + 0] > 127) solidOfIndex[i] = true;
+        //else solidOfIndex[i] = false;
+        if (platOfIndex[i]) {
+            brightness += 40;
+        }
  
         // add noise
         // WARNING: Remember that this is an extra 4800 function calls (Math.random()) per frame.
@@ -220,49 +146,48 @@ function drawEachPixel() {
         //brightness += lineFromIndexToIndex(i, entities.points[0].index, entities.points[1].index, 7680, false);
         
         // blend
-        screenFxBlend = true;
+        var screenFxBlend = true;
         if (screenFxBlend) {
-            // NOTE: neighbors' influence is NOT weighted by distance, but wouldn't be to hard to
+            // WRONG: This averages the brightness of neighbors from LAST FRAME if they haven't been updated this frame yet,
+            //      or the brightness of neighbors from THIS FRAME if they have.
+            // FIXED/no longer true: NOTE: neighbors' influence is NOT weighted by distance, but wouldn't be too hard to
             var neighborsBrightness = 0,
-                blendRadius = 2; // in cells
+                blendRadius = 2; // in cells. 24 is max
             for (var k = 0; k < neighborsOfIndexInRadius[i][blendRadius].length; k ++) {
-                neighborsBrightness += pixelArray[neighborsOfIndexInRadius[i][blendRadius][k] * 4 + 0];
+                let neighborIndex = neighborsOfIndexInRadius[i][blendRadius][k];
+                neighborsBrightness += (
+                    pixelArray[neighborIndex * 4 + 0] /
+                    (distanceFromIndexToIndex[neighborIndex][i] + 1)
+                );
             }
-            neighborsBrightness /= neighborsOfIndexInRadius[i][blendRadius].length + 1;
+            neighborsBrightness /= neighborsOfIndexInRadius[i][blendRadius].length;
             //if (i === centerIndex && frameCounter % 15 === 0) console.log('brightness before blending', brightness.toFixed(0));
             brightness += neighborsBrightness;
             //if (i === centerIndex && frameCounter % 15 === 0) console.log('brightness after blending', brightness.toFixed(0));
         }
         
-        // apply sum brightness to pixel
+        // apply sum brightness to pixel red channel
         if (pixelArray[i * 4 + 0] < brightness) pixelArray[i * 4 + 0] += brightness / 5;
         
-        
-        // TEMP platforming experiment
-        // indices with property .plat turn solid when they're bright enough, then go un-solid when dark
-        if (propertiesOfIndex[i].plat && brightness > 128 && i !== entities.points[0].index) {
-            propertiesOfIndex[i].solid = true;
-            pixelArray[i * 4 + 1] = 255;
-        } else {
-            if (!propertiesOfIndex[i].notLightSensitive) propertiesOfIndex[i].solid = false;
-        }
-        if (i === entities.points[0].index) pixelArray[i * 4 + 1] = 255;
-        if (propertiesOfIndex[i].solid) pixelArray[i * 4 + 2] = 255;
-        
-        // brightness decay
-        var brightnessDecayScale = 0.92;//0.82; // brightness is this amount of its value last frame
-        pixelArray[i * 4 + 0] *= brightnessDecayScale;
-        
         // color or greyscale
-        var screenFxGreyscale = false;
+        // includes brightness decay
+        var screenFxGreyscale = true,
+            brightnessDecayScale = 0.92;
         if (!screenFxGreyscale) { // color
+            // RGB all fade, but blue bottoms out at 48 
             var screenBlueBase = 48;
+            pixelArray[i * 4 + 0] *= brightnessDecayScale;
             pixelArray[i * 4 + 1] *= brightnessDecayScale;
             if (pixelArray[i * 4 + 2] > screenBlueBase) pixelArray[i * 4 + 2] *= brightnessDecayScale;
             if (pixelArray[i * 4 + 2] < screenBlueBase) pixelArray[i * 4 + 2] = screenBlueBase;
         } else { // greyscale
-            pixelArray[i * 4 + 1] = pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
+            // brighness decay
+            pixelArray[i * 4 + 0] *= brightnessDecayScale;
+            // make red grey
+            pixelArray[i * 4 + 1] = pixelArray[i * 4 + 0];
+            pixelArray[i * 4 + 2] = pixelArray[i * 4 + 0];
         }
+        //pixelArray[i * 4 + 0] = 255;
         
         // draw everything .solid in green
         //if (propertiesOfIndex[i].solid === true) pixelArray[i * 4 + 1] = 255;

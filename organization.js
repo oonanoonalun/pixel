@@ -12,6 +12,12 @@ var distanceFromIndexToIndex = [],
 	centerIndex = 0.5 * pixelsPerRow * pixelsPerColumn + 0.5 * pixelsPerRow,
 	maxNeighborRadius = 24, // used by neighborsOfIndexInRadius[index][radius]. Too big will make the program hangup indefinitely during initialization.
 	maxScreenDistance;
+	
+// these replace the objects in "propertiesOfIndex." It's easy to wipe them by just saying solidOfIndex = dummyFalseArray, rather than switching each one to false as they're cycled through as you'd have to do with properties on an object.
+var dummyFalseArray = [],
+	solidOfIndex = [], // like a property, i.e. "Is this index solid?" if (solidOfIndex[index] === false) then no, this index isn't solid
+	platOfIndex = [], // i.e. platform of index
+	perimeterOfIndex = [];
 
 initializeDistanceLookupTables();
 maxScreenDistance = distanceFromIndexToIndex[0][pixelsPerGrid - 1];
@@ -31,7 +37,18 @@ function initializeMisc() {
 	initializeNeighborsOfIndexInRadius();
 	initializePropertiesOfIndex();
 	initializePerimeterIndices();
+	initializeDummyFalseArray();
+	solidOfIndex = dummyFalseArray;
+	platOfIndex = dummyFalseArray;
+	perimeterOfIndex = dummyFalseArray;
+	notLightSensitiveOfIndex = dummyFalseArray;
 	//initializePerimeterNeighborsInRadiusOfPerimeterIndex(); // not real yet
+}
+
+function initializeDummyFalseArray() {
+	for (var i = 0; i < pixelsPerGrid; i++) {
+		dummyFalseArray.push(false);
+	}
 }
 
 function initializePerimeterIndices() {
@@ -39,21 +56,25 @@ function initializePerimeterIndices() {
 		// top row minus left and rightmost indices (avoiding duplicating corners)
 		if (i < pixelsPerRow - 1 && i > 0) {
 			propertiesOfIndex[i].perimeter = true;
+			perimeterOfIndex[i] = true;
 			perimeterIndices.push(i);
 		}
 		// bottom row minus left and rightmost indices (avoiding duplicating corners)
 		if (i > pixelsPerGrid - pixelsPerRow && i < pixelsPerGrid - 1) {
 			propertiesOfIndex[i].perimeter = true;
+			perimeterOfIndex[i] = true;
 			perimeterIndices.push(i);
 		}
 		// left column
 		if (i % pixelsPerRow === 0) {
 			propertiesOfIndex[i].perimeter = true;
+			perimeterOfIndex[i] = true;
 			perimeterIndices.push(i);
 		}
 		// right column
 		if ((i + 1) % pixelsPerRow === 0) {
 			propertiesOfIndex[i].perimeter = true;
+			perimeterOfIndex[i] = true;
 			perimeterIndices.push(i);
 		}
 	}

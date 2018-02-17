@@ -6,10 +6,6 @@ var canvas = $('canvas')[0],
 	scaledPixelSize = canvas.width / pixelsPerRow,
     imageData = context.createImageData(pixelsPerRow, pixelsPerColumn),
 	pixelArray = imageData.data,
-	map = {
-		'platIndices': [], // i.e. indices that should be platforms, and have the .plat property be 'true'	
-		'solidIndices': [] // i.e. indices that should be permanent platforms, with .solid and .notLightSensitive set to 'true'
-	},
 	entities = {
 		'points': [],
 		'all': []

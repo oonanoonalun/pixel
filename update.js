@@ -93,8 +93,11 @@ function updateEntities(entitiesArray) {
 			collisionUpRight = castAltitudeAndCollisionRay(entity, 'upRight');
 			collisionDownLeft = castAltitudeAndCollisionRay(entity, 'downLeft');
 			collisionDownRight = castAltitudeAndCollisionRay(entity, 'downRight');
-			console.log(entity.altitude.down, entity.altitude.right);
-		} else {
+			if (frameCounter % 15 === 0 && entity === entities.points[0]) {
+				console.log('altitude down:', entity.altitude.down, 'altitude right:', entity.altitude.right);
+			}
+		}
+		if (entity.noCollision) {
 			entity.x += entity.vx;
 			entity.y += entity.vy;
 		}
@@ -108,19 +111,19 @@ function updateEntities(entitiesArray) {
  		// notification if player touches the edge of the screen
  		if (entity.x < 0) {
  			entity.x = 0;
- 			if (entity === entities.points[0]) console.log('player offscreen!');
+ 			//if (entity === entities.points[0]) console.log('player offscreen!');
  		}
  		if (entity.x > canvas.width - 1) {
  			entity.x = canvas.width - 1;
- 			if (entity === entities.points[0]) console.log('player offscreen!');
+ 			//if (entity === entities.points[0]) console.log('player offscreen!');
  		}
  		if (entity.y < 0) {
  			entity.y = 0;
- 			if (entity === entities.points[0]) console.log('player offscreen!');
+ 			//if (entity === entities.points[0]) console.log('player offscreen!');
  		}
  		if (entity.y > canvas.height - 1) {
  			entity.y = canvas.height - 1;
- 			if (entity === entities.points[0]) console.log('player offscreen!');
+ 			//if (entity === entities.points[0]) console.log('player offscreen!');
  		}
 	
 		// coordinates rounded (important or indexOfCoordinates[entity.x][enitity.y] and propertiesOfIndex[] won't work)
@@ -143,14 +146,14 @@ function updateEntities(entitiesArray) {
 	}
 }
 
-// WRONG DOESN'T WORK. It's intended purpose is to deal with interactions where a moving bit of level geometry would overlap,
+// WRONG DOESN'T WORK and not used. It's intended purpose is to deal with interactions where a moving bit of level geometry would overlap,
 //		an entity's position, and should instead push that entity, but it doesn't do that.
 function interiorCollision() {
     // WRONG, maybe. This might repeat work that could be instead stored on the entity during earlier raycasting and movment steps.
     for (var entityNumber = 0; entityNumber < entities.all.length; entityNumber++) {
         var entity = entities.all[entityNumber];
         if (!entity.noCollision) {
-            if (propertiesOfIndex[entity.index].solid) {
+            if (solidOfIndex[entity.index]) {
                 // NOTE: should some of these vars be calculated every frame and stored on the entity?
 				//		Like maybe the player should have a vector with a magnitude of 1 at all times, plus a speed. That would
 				//		would streamline some things that find all this stuff constantly. Some version of this work correctly under very limited conditions.
@@ -167,8 +170,8 @@ function interiorCollision() {
 				xStepBack = scaledPixelSize;
 				yStepBack = scaledPixelSize;
                 while (
-					propertiesOfIndex[entity.index].solid &&
-					!propertiesOfIndex[entity.index].perimeter
+					solidOfIndex[entity.index] &&
+					!perimeterOfIndex[entity.index]
 				) {
 					console.log("interiorCollision() 'while' loop");
 					// WRONG. This doesn't work when solids overtake the entity, both moving in the same direction
