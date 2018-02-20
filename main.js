@@ -12,10 +12,15 @@ for (var i = 0; i < 12; i++) {
 }
 
 function mainLoop() {
-    if (keysDown[KEY_F]) beamXMag++;
-    if (keysDown[KEY_S]) beamXMag--;
-    if (keysDown[KEY_D]) beamYMag++;
-    if (keysDown[KEY_E]) beamYMag--;
+    var beamVectorMaxMag = 100;
+    if (keysDown[KEY_F] && beamXMag < beamVectorMaxMag) beamXMag++;
+    //else if (beamXMag > 0) beamXMag--;
+    if (keysDown[KEY_S] && beamXMag > -beamVectorMaxMag) beamXMag--;
+    //else if (beamXMag < 0) beamXMag++;
+    if (keysDown[KEY_D] && beamYMag < beamVectorMaxMag) beamYMag++;
+    //else if (beamYMag > 0) beamYMag--;
+    if (keysDown[KEY_E] && beamYMag > -beamVectorMaxMag) beamYMag--;
+    //else if (beamYMag < 0) beamYMag++;
     // TEMP moving beam origin
     /*if (frameCounter % 10 === 0) {
         for (let i = 0; i < beamOrigin.length; i++) {
