@@ -1,8 +1,20 @@
 var frameRate = 30;
 
 setInterval(mainLoop, 1000 / frameRate);
-    
+
+// TEMP
+var beamOrigin = [];
+for (var i = 0; i < 12; i++) {
+    beamOrigin.push(perimeterIndices[i]);
+}
+
 function mainLoop() {
+    // TEMP moving beam origin
+    if (frameCounter % 10 === 0) {
+        for (let i = 0; i < beamOrigin.length; i++) {
+            beamOrigin[i]++;
+        }
+    }
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -60,6 +72,14 @@ function mainLoop() {
         yDistanceFromIndexToIndex[entities.points[2].index][entities.points[1].index],
         8, 2048, 0
     );*/
+    
+    castBeamFromIndexArray(
+        beamOrigin,
+        xDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
+        yDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
+        384,
+        0
+    );
     
     entities.points[2].y = coordinatesOfIndex[pixelsPerRow * 10].y; // light is locked on y axis near the screen's top
     //entities.points[2].y -= 2; // light tries to stay high
@@ -130,6 +150,7 @@ function processEachPixel() {
         
         
         if (platOfIndex[i] && pixelArray[i * 4 + 0] > 127) solidOfIndex[i] = true;
+        // WRONG WTF this next line makes nothing draw and I have no idea why
         //else solidOfIndex[i] = false;
         if (platOfIndex[i]) {
             brightness += 40;
