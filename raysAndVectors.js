@@ -212,78 +212,66 @@ function castRayToPerimeter(originIndex, xMagnitude, yMagnitude) {
 	return currentIndex; // This *should* be a perimeter index, but we could also check each step against perimeterIndices[] (but almost certainly shouldn't)
 }
 
-function castBeamFromIndexArray(originIndexArray, magnitudeX, magnitudeY, brightness, softness) { // note: asking for a magX and magY rather than a target lets you easily use a vx and vy for targeting, or otherwise not deal with a target, but use one if you want
+function castBeamFromIndexArray(originIndexArray, magnitudeX, magnitudeY, brightness) { // note: asking for a magX and magY rather than a target lets you easily use a vx and vy for targeting, or otherwise not deal with a target, but use one if you want
 	// WRONG? Some of these varys don't need to be defined for each ray (i.e. mag, x and y step)
 	//		if all the rays are going to share the same vector (which they currently do).
-	for (var i = 0; i < originIndexArray.length; i++) {
-		var currentIndex = originIndexArray[i],
-			absMagX = magnitudeX,
-			absMagY = magnitudeY,
-			currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
-				'x': coordinatesOfIndex[currentIndex].x,
-				'y': coordinatesOfIndex[currentIndex].y
-			},
-			collided = false,
-			diffusionFactor = 1.5, // illumination is divided by this when applied as softness/diffusion
-			impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
-		if (absMagX < 0) absMagX = -absMagX;
-		if (absMagY < 0) absMagY = -absMagY;
-		var mag = absMagX + absMagY,
-			xStep = magnitudeX / mag * scaledPixelSize,
-			yStep = magnitudeY / mag * scaledPixelSize;
-		
-		// build one ray
-		while ( // for each step (cell move) in building a given ray
-			currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
-			currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
-			!collided
-		) {
-			// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
-			var roundedX = currentCoords.x,
-				roundedY = currentCoords.y;
-			if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
-			if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
-			if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
-			if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
-			if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
-			if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+	if (originIndexArray.length > 0) {
+		for (var i = 0; i < originIndexArray.length; i++) {
+			var currentIndex = originIndexArray[i],
+				absMagX = magnitudeX,
+				absMagY = magnitudeY,
+				currentCoords = { // WRONG-ish. Don't know why it's not working to just do 'currentCoords = coordinatesOfIndex[currentIndex]'
+					'x': coordinatesOfIndex[currentIndex].x,
+					'y': coordinatesOfIndex[currentIndex].y
+				},
+				collided = false,
+				impactEnhancementScale = 4; // illumation due to impact is multiplied by this, making edges stand out in a beam
+			if (absMagX < 0) absMagX = -absMagX;
+			if (absMagY < 0) absMagY = -absMagY;
+			var mag = absMagX + absMagY,
+				xStep = magnitudeX / mag * scaledPixelSize,
+				yStep = magnitudeY / mag * scaledPixelSize;
 			
-			currentIndex = indexOfCoordinates[roundedX][roundedY];
-			// testing: drawing rays crudely
-			//pixelArray[currentIndex * 4 + 0] = 128;
-			
-			// collision
-			// NOTE: Should probably make a scaling factor that decreases brightness based on softness, as softeness will create many overlapping brightening impulses, possibly making things way too bright
-			var illumination = brightness / (distanceFromIndexToIndex[originIndexArray[i]][currentIndex] + 1); // the '+ 1' prevents dividing by 0
-			if (platOfIndex[currentIndex] || solidOfIndex[currentIndex]) {
-				// if the ray collides with something solid
-				// light the impacted surface
-				pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
-				if (softness) {
-					// diffuse the impact lighting effect
-					for (var k = 0; k < neighborsOfIndexInRadius[currentIndex][softness].length; k++) {
-						// WRONG probably make the diffusion affects by distance from the impacted surface
-						pixelArray[neighborsOfIndexInRadius[currentIndex][softness][k] * 4 + 0] += illumination / diffusionFactor * impactEnhancementScale;
-					}
+			// build one ray
+			while ( // for each step (cell move) in building a given ray
+				currentCoords.x >= 0 && currentCoords.x <= canvas.width - 1 && // DON'T CHANGE: Rounding means these have to be '<= canvas.width/height - 1' rather than '< canvas.width/height'
+				currentCoords.y >= 0 && currentCoords.y <= canvas.height - 1 &&
+				!collided
+			) {
+				// rounding checked coords so that they work with the indexOfCoordinates[x][y] lookup table
+				var roundedX = currentCoords.x,
+					roundedY = currentCoords.y;
+				if (roundedX % 1 >= 0.5) roundedX += 1 - roundedX % 1;
+				if (roundedX % 1 < 0.5 && roundedX % 1 > -0.5) roundedX -= roundedX % 1;
+				if (roundedX % 1 <= -0.5) roundedX -= 1 + roundedX % 1;
+				if (roundedY % 1 >= 0.5) roundedY += 1 - roundedY % 1;
+				if (roundedY % 1 < 0.5 && roundedY % 1 > -0.5) roundedY -= roundedY % 1;
+				if (roundedY % 1 <= -0.5) roundedY -= 1 + roundedY % 1;
+				
+				currentIndex = indexOfCoordinates[roundedX][roundedY];
+				// testing: drawing rays crudely
+				//pixelArray[currentIndex * 4 + 0] = 128;
+				
+				// collision
+				// NOTE: Should probably make a scaling factor that decreases brightness based on softness, as softeness will create many overlapping brightening impulses, possibly making things way too bright
+				var illumination = brightness / (distanceFromIndexToIndex[originIndexArray[i]][currentIndex] + 1); // the '+ 1' prevents dividing by 0
+				if (platOfIndex[currentIndex] || solidOfIndex[currentIndex]) {
+					// if the ray collides with something solid
+					// light the impacted surface
+					pixelArray[currentIndex * 4 + 0] += illumination * impactEnhancementScale;
+					// stop drawing the ray
+					collided = true;
+				} else {
+					// if the ray hasn't collided with something solid
+					// light the ray's path
+					pixelArray[currentIndex * 4 + 0] += illumination * 20;
 				}
-				// stop drawing the ray
-				collided = true;
-			} else {
-				// if the ray hasn't collided with something solid
-				// light the ray's path
-				pixelArray[currentIndex * 4 + 0] = illumination * 20;
-				if (softness) {
-					// diffuse the brightening effect of the ray
-					for (var j = 0; j < neighborsOfIndexInRadius[currentIndex][softness].length; j++) {
-						pixelArray[neighborsOfIndexInRadius[currentIndex][softness][j] * 4 + 0] += illumination / diffusionFactor;
-					}
-				}
-			}
-			
-			// incrementing the coordinates for next loop
-			currentCoords.x += xStep;
-			currentCoords.y += yStep;
-		} // end of building one ray
+				
+				// incrementing the coordinates for next loop
+				currentCoords.x += xStep;
+				currentCoords.y += yStep;
+			} // end of building one ray
+		}
 	}
 }
 

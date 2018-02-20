@@ -3,18 +3,25 @@ var frameRate = 30;
 setInterval(mainLoop, 1000 / frameRate);
 
 // TEMP
-var beamOrigin = [];
+var beamOrigin = [],
+    beamXMag = 0,
+    beamYMag = 0;
+
 for (var i = 0; i < 12; i++) {
-    beamOrigin.push(perimeterIndices[i]);
+    beamOrigin.push(perimeterIndices[Math.round(Math.random() * (perimeterIndices.length - 1))]);
 }
 
 function mainLoop() {
+    if (keysDown[KEY_F]) beamXMag++;
+    if (keysDown[KEY_S]) beamXMag--;
+    if (keysDown[KEY_D]) beamYMag++;
+    if (keysDown[KEY_E]) beamYMag--;
     // TEMP moving beam origin
-    if (frameCounter % 10 === 0) {
+    /*if (frameCounter % 10 === 0) {
         for (let i = 0; i < beamOrigin.length; i++) {
             beamOrigin[i]++;
         }
-    }
+    }*/
     // updating mouse position
     currentMousePosition = relativeMousePosition(canvas);
     // WARNING: when I start filtering entity arrays, it's not going to be awesome that
@@ -27,7 +34,7 @@ function mainLoop() {
     
     // player controls
     //controls(4, entities.points[0].spotlight.narrowness);
-    controlsPlatformer(1, 6, entities.points[0].spotlight.narrowness, false);
+    //controlsPlatformer(1, 6, entities.points[0].spotlight.narrowness, false);
     
     // mouse position is controlling entities.points[1]
     //entities.points[1].x = currentMousePosition.x;
@@ -73,13 +80,16 @@ function mainLoop() {
         8, 2048, 0
     );*/
     
-    castBeamFromIndexArray(
-        beamOrigin,
-        xDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
-        yDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
-        384,
-        0
-    );
+    if (beamOrigin.length > 0) {
+        castBeamFromIndexArray(
+            beamOrigin,
+            beamXMag,
+            beamYMag,
+            //xDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
+            //yDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
+            64
+        );
+    }
     
     entities.points[2].y = coordinatesOfIndex[pixelsPerRow * 10].y; // light is locked on y axis near the screen's top
     //entities.points[2].y -= 2; // light tries to stay high
@@ -122,7 +132,19 @@ function mainLoop() {
 
 function buildMap() {
     if (frameCounter === 1 || (keysDown[KEY_SHIFT] && keysDown[KEY_G])) {
-        platOfIndex = dummyFalseArray;
+        // TEMP Random beam origins
+        for (var i = 0; i < 12; i++) {
+            beamOrigin.push(perimeterIndices[Math.round(Math.random() * (perimeterIndices.length - 1))]);
+        }
+        //platOfIndex = dummyFalseArray; // WRONG: why don't these work?
+        //solidOfIndex = dummyFalseArray;
+        //beamOrigin = [];
+        beamXMag = Math.random();
+        beamYMag = Math.random();
+        for (let i = 0; i < pixelsPerGrid; i++) {
+            platOfIndex[i] = false;
+            solidOfIndex[i] = false;
+        }
         var numberOfBlocks = 15,
             blockSize = 6;
         for (var i = 0; i < numberOfBlocks; i++) {
@@ -131,6 +153,8 @@ function buildMap() {
                 for (var k = 0; k < blockSize; k++) { // could be blockHeight/row
                     if (blockUpperLeft + j + k * pixelsPerRow < pixelsPerGrid) {
                         platOfIndex[blockUpperLeft + j + k * pixelsPerRow] = true;
+                        // assigning random block cells as beam origins
+                        //if (Math.random() < 0.15 && beamOrigin.length < 12) beamOrigin.push(blockUpperLeft + j + k * pixelsPerRow);
                     }
                 }
             }
