@@ -43,7 +43,7 @@ function initializeEntities() {
 			'absVy': 0,
 			'v': 0,
 			'maxAcceleration': 5,
-			'maxSpeed': 25,
+			'maxSpeed': 4,
 			'altitude': {
 				'up': null,
 				'down': null,
@@ -62,11 +62,15 @@ function initializeEntities() {
 		entities.points.push(point);
 		entities.all.push(point);
 	}
+	// point 0
 	entities.points[0].spotlight = {
 		'brightness': 384,
 		'narrowness': 3.75
 	};
+	// point 1
 	entities.points[1].noCollision = true;
+	entities.points[1].maxSpeed = 25;
+	entities.points[1].z = 0;
 	// point 2
 	entities.points[2].noCollision = true; // WRONG this is weird. Think about how to deal with obstacle-obstacle collision. If this isn't true, the object collides with the solid things built around it if all the blocks around it are built as solid.
 	entities.points[2].spotlight = {

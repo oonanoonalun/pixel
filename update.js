@@ -93,9 +93,9 @@ function updateEntities(entitiesArray) {
 			collisionUpRight = castAltitudeAndCollisionRay(entity, 'upRight');
 			collisionDownLeft = castAltitudeAndCollisionRay(entity, 'downLeft');
 			collisionDownRight = castAltitudeAndCollisionRay(entity, 'downRight');
-			if (frameCounter % 15 === 0 && entity === entities.points[0]) {
+			/*if (frameCounter % 15 === 0 && entity === entities.points[0]) {
 				console.log('altitude down:', entity.altitude.down, 'altitude right:', entity.altitude.right);
-			}
+			}*/
 		}
 		if (entity.noCollision) {
 			entity.x += entity.vx;
@@ -142,7 +142,31 @@ function updateEntities(entitiesArray) {
 		// NOTE: Changing an entities index won't move it, as its coords will just reset its index.
 		//			To move an entity, change its coordinates.
 		entity.previousIndex = entity.index; // WRONG, maybe. Is there any point in doing this?
-		entity.index = indexOfCoordinates[entity.xRounded][entity.yRounded];
+		// non- '3D'
+		if (entity !== entities.points[1]) entity.index = indexOfCoordinates[entity.xRounded][entity.yRounded];
+		
+		// '3D' test:
+		if (entity === entities.points[1]) {
+			// 'sx' and 'sy' mean 'screenX' and 'screenY'
+			var tp = entity, // 'tp' means 'testPoint'
+				zScaling = 25; // dividing .z by this is supposed to converge asymptotically on 1.
+			if (tp.x > 0.5 * canvas.width) tp.sx = tp.x - (tp.z / zScaling * (tp.x - canvas.width * 0.5));
+			else tp.sx = tp.x + ((canvas.width * 0.5 - tp.x) * tp.z / zScaling);
+			if (tp.y > 0.5 * canvas.height) tp.sy = tp.y - (tp.z / zScaling * (tp.y - canvas.height * 0.5));
+			else tp.sy = tp.y + ((canvas.height * 0.5 - tp.y) * tp.z / zScaling);
+			
+			tp.sxRounded = tp.sx;
+			tp.syRounded = tp.sy;
+			
+			if (entity.sxRounded % 1 >= 0.5) entity.sxRounded += 1 - entity.sxRounded % 1;
+			if (entity.sxRounded % 1 < 0.5 && entity.sxRounded % 1 > -0.5) entity.sxRounded -= entity.sxRounded % 1;
+			if (entity.sxRounded % 1 <= -0.5) entity.sxRounded -= 1 + entity.sxRounded % 1;
+			if (entity.syRounded % 1 >= 0.5) entity.syRounded += 1 - entity.syRounded % 1;
+			if (entity.syRounded % 1 < 0.5 && entity.syRounded % 1 > -0.5) entity.syRounded -= entity.syRounded % 1;
+			if (entity.syRounded % 1 <= -0.5) entity.syRounded -= 1 + entity.syRounded % 1;
+			
+			entity.index = indexOfCoordinates[tp.sxRounded][tp.syRounded];
+		}
 	}
 }
 

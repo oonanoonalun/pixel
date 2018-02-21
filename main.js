@@ -12,7 +12,7 @@ for (var i = 0; i < 12; i++) {
 }
 
 function mainLoop() {
-    var beamVectorMaxMag = 100;
+    var beamVectorMaxMag = 20;
     if (keysDown[KEY_F] && beamXMag < beamVectorMaxMag) beamXMag++;
     //else if (beamXMag > 0) beamXMag--;
     if (keysDown[KEY_S] && beamXMag > -beamVectorMaxMag) beamXMag--;
@@ -42,8 +42,8 @@ function mainLoop() {
     //controlsPlatformer(1, 6, entities.points[0].spotlight.narrowness, false);
     
     // mouse position is controlling entities.points[1]
-    //entities.points[1].x = currentMousePosition.x;
-    //entities.points[1].y = currentMousePosition.y;
+    entities.points[1].x = currentMousePosition.x;
+    entities.points[1].y = currentMousePosition.y;
     
     // scary point shadow
     //if (frameCounter === 1) entities.points[2].brightness = -17600;
@@ -70,7 +70,7 @@ function mainLoop() {
     
     // TEMP platformer wandering spotlight
     // NOTE: Should maybe have a "justX/Y" option for wandering()
-    wandering(entities.points[2], 3);
+    wandering(entities.points[2], 2);
     //castSpotlight(entities.points[2], entities.points[1].index, 0);
     //castBeamOrthogonally(entities.points[2], 'right', 2, 2048, 0);
     
@@ -85,25 +85,27 @@ function mainLoop() {
         8, 2048, 0
     );*/
     
-    if (beamOrigin.length > 0) {
+    
+    // TEMP some beams cast from the perimeter whose shared direction is controllable with ESDF
+    /*if (beamOrigin.length > 0) {
         castBeamFromIndexArray(
             beamOrigin,
             beamXMag,
             beamYMag,
             //xDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
             //yDistanceFromIndexToIndex[beamOrigin[beamOrigin.length / 2 - beamOrigin.length / 2 % 1]][entities.points[1].index],
-            64
+            48
         );
-    }
+    }*/
     
-    entities.points[2].y = coordinatesOfIndex[pixelsPerRow * 10].y; // light is locked on y axis near the screen's top
+    //entities.points[2].y = coordinatesOfIndex[pixelsPerRow * 10].y; // light is locked on y axis near the screen's top
     //entities.points[2].y -= 2; // light tries to stay high
     //if (entities.points[2].index < pixelsPerRow) entities.points[2].y += 3; // but moves done if in the top row
-    wandering(entities.points[1], 2);
+    //wandering(entities.points[1], 2);
     //chasing(entities.points[1], entities.points[0], 1);
     //entities.points[1].x = entities.points[2].x; // target stays directly under spotlight
     // WRONG: All the behavior above should be in a function called "behavior"
-    entities.points[1].y = coordinatesOfIndex[pixelsPerGrid - pixelsPerRow].y; // target point stays on the bottom row
+    //entities.points[1].y = coordinatesOfIndex[pixelsPerGrid - pixelsPerRow].y; // target point stays on the bottom row
     
     
     /*patrol(
@@ -118,9 +120,10 @@ function mainLoop() {
         ],
         1
     );*/
-    buildMap();
+    //buildMap();
     // updating entity position, speed, acceleration, nearest index, and child position
     updateEntities(entities.all);
+    point1_3D();
     processEachPixel();
     // just testing
     //pixelArray[2440 * 4 + 0] = 255;
@@ -138,7 +141,7 @@ function mainLoop() {
 function buildMap() {
     if (frameCounter === 1 || (keysDown[KEY_SHIFT] && keysDown[KEY_G])) {
         // TEMP Random beam origins
-        for (var i = 0; i < 12; i++) {
+        for (var n = 0; n < 12; n++) {
             beamOrigin.push(perimeterIndices[Math.round(Math.random() * (perimeterIndices.length - 1))]);
         }
         //platOfIndex = dummyFalseArray; // WRONG: why don't these work?
@@ -146,9 +149,9 @@ function buildMap() {
         //beamOrigin = [];
         beamXMag = Math.random();
         beamYMag = Math.random();
-        for (let i = 0; i < pixelsPerGrid; i++) {
-            platOfIndex[i] = false;
-            solidOfIndex[i] = false;
+        for (var m = 0; m < pixelsPerGrid; m++) {
+            platOfIndex[m] = false;
+            solidOfIndex[m] = false;
         }
         var numberOfBlocks = 15,
             blockSize = 6;
@@ -167,8 +170,43 @@ function buildMap() {
     }
 }
 
+function point1_3D() {
+    var tp = entities.points[1],
+        moveAmount = 1,
+        zScaling = 25; // should make z asymptotically converge on 1 when z is divided by this.
+    if (frameCounter === 1) tp.oldZ = tp.z;
+    tp.brightness = 256 / tp.z;
+    if (keysDown[KEY_E] && tp.z < zScaling) tp.z += moveAmount;
+    if (keysDown[KEY_D] && tp.z > 0) tp.z -= moveAmount;
+    // the next two lines do the correct thing, but the upper left is the center, not the center of the screen
+    //tp.x = tp.x / (0.02 * tp.z + 1);
+    //tp.y = tp.y / (0.02 * tp.z + 1);
+    /*if (tp.x > 0.5 * canvas.width) tp.x -= tp.z / zScaling * (tp.x - canvas.width * 0.5);
+    else tp.x += (canvas.height * 0.5 - tp.x) * tp.z / zScaling;
+    if (tp.y > 0.5 * canvas.height) tp.y -= tp.z / zScaling * (tp.y - canvas.height * 0.5);
+    else tp.y += (canvas.height * 0.5 - tp.y) * tp.z / zScaling;*/
+    if (tp.z !== tp.oldZ) {
+        tp.oldZ = tp.z;
+        console.log(tp.z);
+    }
+}
+
 function processEachPixel() {
     for (var i = 0; i < pixelsPerGrid; i++) {
+        // TEMP one point leaves a solid trail, another erases solidness
+        //if (distanceFromIndexToIndex[i][entities.points[1].index] < scaledPixelSize * 2) solidOfIndex[i] = true;
+        //if (distanceFromIndexToIndex[i][entities.points[2].index] < scaledPixelSize * 2) solidOfIndex[i] = false;
+        
+        // TEMP Pseudo-3D experiment
+        // illuminate point
+        if (i === entities.points[1].index) pixelArray[i * 4 + 0] += tp.brightness;
+        var tp = entities.points[1], // i.e. 'testPoint'
+            tpMaxSize = 8;
+        // illuminate points surrounding tp with a bigger radius when it's closer (i.e. low .z value)
+        if (distanceFromIndexToIndex[i][tp.index] < tpMaxSize * scaledPixelSize / (tp.z + 1)) {
+            pixelArray[i * 4 + 0] += tp.brightness / (distanceFromIndexToIndex[i][tp.index] + scaledPixelSize * 5);
+        }
+        
         ///////////////////
         // draw pixels
         // a fraction of the brightness will be applied to pixel if the pixel is dimmer than the brightness
@@ -182,12 +220,12 @@ function processEachPixel() {
         // WRONG WTF this next line makes nothing draw and I have no idea why
         //else solidOfIndex[i] = false;
         if (platOfIndex[i]) {
-            brightness += 40;
+            brightness += 20;
         }
  
         // add noise
         // WARNING: Remember that this is an extra 4800 function calls (Math.random()) per frame.
-        //pixelArray[i * 4 + 0] += Math.random() * 8 - 4;
+        pixelArray[i * 4 + 0] += Math.random() * 8 - 4;
         //pixelArray[i * 4 + 1] += Math.random() * 16 - 8;
         
         // entities affect brightness
@@ -207,8 +245,9 @@ function processEachPixel() {
                 let neighborIndex = neighborsOfIndexInRadius[i][blendRadius][k];
                 neighborsBrightness += (
                     pixelArray[neighborIndex * 4 + 0] /
-                    (distanceFromIndexToIndex[neighborIndex][i] + 1)
+                    ((distanceFromIndexToIndex[neighborIndex][i] + 1) / 6)
                 );
+                //neighborsBrightness += pixelArray[neighborIndex * 4 + 0];
             }
             neighborsBrightness /= neighborsOfIndexInRadius[i][blendRadius].length;
             //if (i === centerIndex && frameCounter % 15 === 0) console.log('brightness before blending', brightness.toFixed(0));
