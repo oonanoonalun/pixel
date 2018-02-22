@@ -172,20 +172,15 @@ function buildMap() {
 
 function point1_3D() {
     var tp = entities.points[1],
-        moveAmount = 1,
-        zScaling = 25; // should make z asymptotically converge on 1 when z is divided by this.
-    if (frameCounter === 1) tp.oldZ = tp.z;
-    tp.brightness = 256 / tp.z;
-    if (keysDown[KEY_E] && tp.z < zScaling) tp.z += moveAmount;
+        moveAmount = 1, // movement per frame while z move key is down
+        zMax = pixelsPerColumn; // z edge of canvas
+    // less bright when far away
+    tp.brightness = pixelsPerRow / (tp.z / 10);
+    // move entities.points[1] on the z-axis
+    if (keysDown[KEY_E] && tp.z < zMax) tp.z += moveAmount;
     if (keysDown[KEY_D] && tp.z > 0) tp.z -= moveAmount;
-    // the next two lines do the correct thing, but the upper left is the center, not the center of the screen
-    //tp.x = tp.x / (0.02 * tp.z + 1);
-    //tp.y = tp.y / (0.02 * tp.z + 1);
-    /*if (tp.x > 0.5 * canvas.width) tp.x -= tp.z / zScaling * (tp.x - canvas.width * 0.5);
-    else tp.x += (canvas.height * 0.5 - tp.x) * tp.z / zScaling;
-    if (tp.y > 0.5 * canvas.height) tp.y -= tp.z / zScaling * (tp.y - canvas.height * 0.5);
-    else tp.y += (canvas.height * 0.5 - tp.y) * tp.z / zScaling;*/
-    if (tp.z !== tp.oldZ) {
+    // logging point 1's z position
+    if (tp.z !== tp.oldZ || !tp.oldZ) {
         tp.oldZ = tp.z;
         console.log(tp.z);
     }
@@ -193,19 +188,24 @@ function point1_3D() {
 
 function processEachPixel() {
     for (var i = 0; i < pixelsPerGrid; i++) {
-        // TEMP one point leaves a solid trail, another erases solidness
-        //if (distanceFromIndexToIndex[i][entities.points[1].index] < scaledPixelSize * 2) solidOfIndex[i] = true;
-        //if (distanceFromIndexToIndex[i][entities.points[2].index] < scaledPixelSize * 2) solidOfIndex[i] = false;
+        /////////////////////////
+        // 3D work
         
-        // TEMP Pseudo-3D experiment
+        // center point drawn
+        //if (i === centerIndex) pixelArray[i * 4 + 0] = 255;
+        
         // illuminate point
-        if (i === entities.points[1].index) pixelArray[i * 4 + 0] += tp.brightness;
         var tp = entities.points[1], // i.e. 'testPoint'
             tpMaxSize = 8;
+        if (i === entities.points[1].index) pixelArray[i * 4 + 0] += tp.brightness;
+        
         // illuminate points surrounding tp with a bigger radius when it's closer (i.e. low .z value)
         if (distanceFromIndexToIndex[i][tp.index] < tpMaxSize * scaledPixelSize / (tp.z + 1)) {
             pixelArray[i * 4 + 0] += tp.brightness / (distanceFromIndexToIndex[i][tp.index] + scaledPixelSize * 5);
         }
+        
+        // end 3D work
+        ///////////////////////////
         
         ///////////////////
         // draw pixels

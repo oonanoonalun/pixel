@@ -143,20 +143,19 @@ function updateEntities(entitiesArray) {
 		//			To move an entity, change its coordinates.
 		entity.previousIndex = entity.index; // WRONG, maybe. Is there any point in doing this?
 		// non- '3D'
-		if (entity !== entities.points[1]) entity.index = indexOfCoordinates[entity.xRounded][entity.yRounded];
+		if (entity.z === undefined) entity.index = indexOfCoordinates[entity.xRounded][entity.yRounded];
 		
 		// '3D' test:
-		if (entity === entities.points[1]) {
+		if (entity.z !== undefined) {
 			// 'sx' and 'sy' mean 'screenX' and 'screenY'
-			var tp = entity, // 'tp' means 'testPoint'
-				zScaling = 25; // dividing .z by this is supposed to converge asymptotically on 1.
-			if (tp.x > 0.5 * canvas.width) tp.sx = tp.x - (tp.z / zScaling * (tp.x - canvas.width * 0.5));
-			else tp.sx = tp.x + ((canvas.width * 0.5 - tp.x) * tp.z / zScaling);
-			if (tp.y > 0.5 * canvas.height) tp.sy = tp.y - (tp.z / zScaling * (tp.y - canvas.height * 0.5));
-			else tp.sy = tp.y + ((canvas.height * 0.5 - tp.y) * tp.z / zScaling);
+			var zoomFactor = entity.z * entity.z * 50e-5 + 1; // '+ 1' prevents dividing by zero
+			if (entity.x > 0.5 * canvas.width) entity.sx = canvas.width * 0.5 + ((entity.x - canvas.width * 0.5) / zoomFactor);
+			else entity.sx = canvas.width * 0.5 - ((canvas.width * 0.5 - entity.x) / zoomFactor);
+			if (entity.y > 0.5 * canvas.height) entity.sy = canvas.height * 0.5 + ((entity.y - canvas.height * 0.5) / zoomFactor);
+			else entity.sy = canvas.height * 0.5 - ((canvas.height * 0.5 - entity.y) / zoomFactor);
 			
-			tp.sxRounded = tp.sx;
-			tp.syRounded = tp.sy;
+			entity.sxRounded = entity.sx;
+			entity.syRounded = entity.sy;
 			
 			if (entity.sxRounded % 1 >= 0.5) entity.sxRounded += 1 - entity.sxRounded % 1;
 			if (entity.sxRounded % 1 < 0.5 && entity.sxRounded % 1 > -0.5) entity.sxRounded -= entity.sxRounded % 1;
@@ -165,7 +164,7 @@ function updateEntities(entitiesArray) {
 			if (entity.syRounded % 1 < 0.5 && entity.syRounded % 1 > -0.5) entity.syRounded -= entity.syRounded % 1;
 			if (entity.syRounded % 1 <= -0.5) entity.syRounded -= 1 + entity.syRounded % 1;
 			
-			entity.index = indexOfCoordinates[tp.sxRounded][tp.syRounded];
+			entity.index = indexOfCoordinates[entity.sxRounded][entity.syRounded];
 		}
 	}
 }
