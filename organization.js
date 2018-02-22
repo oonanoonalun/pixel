@@ -26,8 +26,8 @@ initializeMisc();
 
 
 
-initializeEntities(); // this has to happen after indexOfCoordinates[][] is initialized.
-
+initializePointEntities(); // this has to happen after indexOfCoordinates[][] is initialized.
+intiializeMeshEntities();
 
 
 ////////////////////////////
@@ -45,6 +45,7 @@ function initializeMisc() {
 	//initializePerimeterNeighborsInRadiusOfPerimeterIndex(); // not real yet
 }
 
+// WRONG, maybe? this isn't doing anything?
 function initializeDummyFalseArray() {
 	for (var i = 0; i < pixelsPerGrid; i++) {
 		dummyFalseArray.push(false);

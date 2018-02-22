@@ -122,7 +122,8 @@ function mainLoop() {
     );*/
     //buildMap();
     // updating entity position, speed, acceleration, nearest index, and child position
-    updateEntities(entities.all);
+    updateEntities(entities.points);
+    //updateMeshes(entities.meshes);
     point1_3D();
     processEachPixel();
     // just testing
@@ -194,15 +195,8 @@ function processEachPixel() {
         // center point drawn
         //if (i === centerIndex) pixelArray[i * 4 + 0] = 255;
         
-        // illuminate point
-        var tp = entities.points[1], // i.e. 'testPoint'
-            tpMaxSize = 8;
-        if (i === entities.points[1].index) pixelArray[i * 4 + 0] += tp.brightness;
-        
-        // illuminate points surrounding tp with a bigger radius when it's closer (i.e. low .z value)
-        if (distanceFromIndexToIndex[i][tp.index] < tpMaxSize * scaledPixelSize / (tp.z + 1)) {
-            pixelArray[i * 4 + 0] += tp.brightness / (distanceFromIndexToIndex[i][tp.index] + scaledPixelSize * 5);
-        }
+        // illuminate point 1
+        if (i === entities.points[1].index) pixelArray[i * 4 + 0] += entities.points[1].brightness;
         
         // end 3D work
         ///////////////////////////

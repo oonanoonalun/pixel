@@ -20,8 +20,8 @@ function updateEntities(entitiesArray) {
 		// will maybe do gravity here. For now it's just for the player in input.js.
 		
 		// acceleration limited
-		var absDx = entity.vx, // absolute values
-			absDy = entity.vy;
+		var absDx = entity.dx, // absolute values
+			absDy = entity.dy;
 		if (absDx < 0) absDx = -absDx;
 		if (absDy < 0) absDy = -absDy;
 		if (absDx + absDy > entity.maxAcceleration) {
@@ -139,7 +139,7 @@ function updateEntities(entitiesArray) {
 		if (entity.yRounded % 1 <= -0.5) entity.yRounded -= 1 + entity.yRounded % 1;
 		
 		// nearest array index assigned
-		// NOTE: Changing an entities index won't move it, as its coords will just reset its index.
+		// NOTE: Changing an entity's index won't move it, as its coords will just reset its index.
 		//			To move an entity, change its coordinates.
 		entity.previousIndex = entity.index; // WRONG, maybe. Is there any point in doing this?
 		// non- '3D'
@@ -168,6 +168,143 @@ function updateEntities(entitiesArray) {
 		}
 	}
 }
+
+/*updateMeshes(meshArray) {
+	for (var i = 0; i < meshArray.length; i++) {
+		var mesh = meshArray[i];
+		
+		// acceleration limited
+		var absDx = mesh.dx, // absolute values
+			absDy = mesh.dy,
+			absDz = mesh.dz;
+		if (absDx < 0) absDx = -absDx;
+		if (absDy < 0) absDy = -absDy;
+		if (absDz < 0) absDz = -absDz;
+		mesh.d = absDx + absDy + absDz;
+		if (d > mesh.maxAcceleration) {
+			mesh.dx *= mesh.maxAcceleration / mesh.d;
+			mesh.dy *= mesh.maxAcceleration / mesh.d;
+			mesh.dz *= mesh.maxAcceleration / mesh.d;
+		}
+		
+		// WRONG, maybe. Shouldn't this be necessary? Should log dx and dy sometimes.
+		//		You wouldn't want to be still, but have an old dx/dy to overcome when you start moving.
+		// acceleration decays
+		var accelerationDecay = 0.9;
+		mesh.dx *= accelerationDecay;
+		mesh.dy *= accelerationDecay;
+		mesh.dz *= accelerationDecay;
+		
+		// acceleration applied to speed
+		mesh.vx += mesh.dx;
+		mesh.vy += mesh.dy;
+		mesh.vz += mesh.dz;
+		
+		// speed limited
+		mesh.absVx = mesh.vx; // absolute values
+		mesh.absVy = mesh.vy;
+		mesh.absVz = mesh.vz;
+		if (mesh.absVx < 0) mesh.absVx = -mesh.absVx;
+		if (mesh.absVy < 0) mesh.absVy = -mesh.absVy;
+		if (mesh.absVz < 0) mesh.absVz = -mesh.absVz;
+		mesh.v = mesh.absVx + mesh.absVy + mesh.absVz;
+		if (mesh.v > mesh.maxSpeed) {
+			mesh.vx *= mesh.maxSpeed / mesh.v;
+			mesh.vy *= mesh.maxSpeed / mesh.v;
+			mesh.vz *= mesh.maxSpeed / mesh.v;
+		}
+		
+		// friction applied to speed
+		var friction = 0.9;
+		mesh.vx *= friction;
+		mesh.vy *= friction;
+		mesh.vz *= friction;
+		
+		// collision could go here
+		if (mesh.noCollision) {
+			mesh.x += mesh.vx;
+			mesh.y += mesh.vy;
+			mesh.z += mesh.vz;
+		}
+		
+		// position constrainted to canvas
+ 		// notification if player touches the edge of the screen
+ 		if (mesh.x < 0) {
+ 			mesh.x = 0;
+ 			//if (mesh === entities.points[0]) console.log('player offscreen!');
+ 		}
+ 		if (mesh.x > canvas.width - 1) {
+ 			mesh.x = canvas.width - 1;
+ 			//if (mesh === entities.points[0]) console.log('player offscreen!');
+ 		}
+ 		if (mesh.y < 0) {
+ 			mesh.y = 0;
+ 			//if (mesh === entities.points[0]) console.log('player offscreen!');
+ 		}
+ 		if (mesh.y > canvas.height - 1) {
+ 			mesh.y = canvas.height - 1;
+ 			//if (mesh === entities.points[0]) console.log('player offscreen!');
+ 		}
+		if (mesh.z < 0) {
+			mesh.z = 0;
+		}
+		if (mesh.z > canvas.height - 1) {
+			mesh.z = canvas.height - 1;
+		}
+
+		// coordinates rounded (important or indexOfCoordinates[mesh.x][enitity.y] and propertiesOfIndex[] won't work)
+		// avoiding a Math.round() function call
+		// note: onscreen things won't have negative coords, but offscreen ones might, so this covers that.
+		
+		// WRONG: vert coords are still in global space
+		
+		for (var v = 0; v < mesh.verts.length; v++) {
+			let vert = mesh.verts[v];
+			mesh.vertsRounded[v] = [vert[0], vert[1], vert[2], 0];
+			var vertR = mesh.vertsRounded[v]; // i.e. vert rounded
+			if (vertR[0] % 1 >= 0.5) vertR[0] += 1 - vertR[0] % 1;
+			if (vertR[0] % 1 < 0.5 && vertR[0] % 1 > -0.5) vertR[0] -= vertR[0] % 1;
+			if (vertR[0] % 1 <= -0.5) vertR[0] -= 1 + vertR[0] % 1;
+			if (vertR[1] % 1 >= 0.5) vertR[1] += 1 - vertR[1] % 1;
+			if (vertR[1] % 1 < 0.5 && vertR[1] % 1 > -0.5) vertR[1] -= vertR[1] % 1;
+			if (vertR[1] % 1 <= -0.5) vertR[1] -= 1 + vertR[1] % 1;
+			if (vertR[2] % 1 >= 0.5) vertR[2] += 1 - vertR[2] % 1;
+			if (vertR[2] % 1 < 0.5 && vertR[2] % 1 > -0.5) vertR[2] -= vertR[2] % 1;
+			if (vertR[2] % 1 <= -0.5) vertR[2] -= 1 + vertR[2] % 1;
+			
+			// nearest array index assigned
+			// NOTE: Changing an entity's index won't move it, as its coords will just reset its index.
+			//			To move an vert, change its coordinates.
+			// non-'3D', or at the front plane
+			if (!vertR[2]) vert[3] = indexOfCoordinates[vertR[0]][vertR[1]];
+			
+			
+			// WRONG FROM HERE DOWN. working on translating the below stuff into something that works with vert format
+			// '3D', or with a nonzero z value
+			if (vertR[2]) {
+				// 'sx' and 'sy' mean 'screenX' and 'screenY'
+				// WRONG: this '* 50e-5' should just be dividing by a big integer
+				var zoomFactor = vert[2] * vert[2] * 50e-5 + 1; // '+ 1' prevents dividing by zero
+				if (vert[0] > 0.5 * canvas.width) vert.sx = canvas.width * 0.5 + ((vert.x - canvas.width * 0.5) / zoomFactor);
+				else vert.sx = canvas.width * 0.5 - ((canvas.width * 0.5 - vert.x) / zoomFactor);
+				if (vert[1] > 0.5 * canvas.height) vert.sy = canvas.height * 0.5 + ((vert.y - canvas.height * 0.5) / zoomFactor);
+				else vert.sy = canvas.height * 0.5 - ((canvas.height * 0.5 - vert.y) / zoomFactor);
+				
+				vert.sxRounded = vert.sx;
+				vert.syRounded = vert.sy;
+				
+				if (vert.sxRounded % 1 >= 0.5) vert.sxRounded += 1 - vert.sxRounded % 1;
+				if (vert.sxRounded % 1 < 0.5 && vert.sxRounded % 1 > -0.5) vert.sxRounded -= vert.sxRounded % 1;
+				if (vert.sxRounded % 1 <= -0.5) vert.sxRounded -= 1 + vert.sxRounded % 1;
+				if (vert.syRounded % 1 >= 0.5) vert.syRounded += 1 - vert.syRounded % 1;
+				if (vert.syRounded % 1 < 0.5 && vert.syRounded % 1 > -0.5) vert.syRounded -= vert.syRounded % 1;
+				if (vert.syRounded % 1 <= -0.5) vert.syRounded -= 1 + vert.syRounded % 1;
+				
+				vert.index = indexOfCoordinates[vert.sxRounded][vert.syRounded];
+			}
+		}
+	}
+}*/
 
 // WRONG DOESN'T WORK and not used. It's intended purpose is to deal with interactions where a moving bit of level geometry would overlap,
 //		an entity's position, and should instead push that entity, but it doesn't do that.
